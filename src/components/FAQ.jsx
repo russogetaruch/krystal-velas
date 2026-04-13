@@ -66,13 +66,13 @@ export default function FAQ() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.4, delay: i * 0.1 }}
-              className={`bg-white/5 border ${openId === faq.id ? 'border-gold/50 bg-white/10' : 'border-white/10'} rounded-2xl overflow-hidden transition-all duration-300`}
+              className={`bg-white/5 border ${openId === faq.id ? 'border-gold/50 bg-white/10' : 'border-white/10'} hover:bg-white/10 rounded-2xl overflow-hidden transition-all duration-300`}
             >
               <button 
                 onClick={() => toggle(faq.id)}
-                className="w-full px-8 py-6 text-left flex justify-between items-center outline-none focus:ring-0"
+                className="w-full px-8 py-6 text-left flex justify-between items-center outline-none focus:ring-0 group"
               >
-                <span className={`font-bold tracking-wide pr-8 ${openId === faq.id ? 'text-gold' : 'text-white'}`}>
+                <span className={`font-bold tracking-wide pr-8 group-hover:text-gold transition-colors ${openId === faq.id ? 'text-gold' : 'text-white'}`}>
                   {faq.q}
                 </span>
                 <ChevronDown 

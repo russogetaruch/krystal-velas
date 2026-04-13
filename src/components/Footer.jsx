@@ -18,8 +18,8 @@ export default function Footer() {
             transition={{ duration: 0.6 }}
             className="flex flex-col items-center md:items-start"
           >
-            <div className="bg-white/95 px-6 pt-4 pb-2 rounded-[1.5rem] shadow-xl inline-block mb-6 ring-2 ring-white/10">
-              <img src="/logo.png" alt="Logo Krystal Velas" className="h-[60px] w-auto" />
+            <div className="mb-6 opacity-90 hover:opacity-100 transition-opacity mix-blend-screen">
+              <img src="/logo.png" alt="Logo Krystal Velas" className="h-[75px] w-auto filter brightness-0 invert" />
             </div>
             <h4 className="font-serif text-3xl text-white mb-2 tracking-wide text-center md:text-left drop-shadow-md">
               A luz que nos conduz

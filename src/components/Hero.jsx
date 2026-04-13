@@ -64,7 +64,7 @@ export default function Hero() {
           transition={{ delay: 0.8, duration: 0.6 }} 
           className="flex flex-col sm:flex-row gap-5 justify-center w-full sm:w-auto"
         >
-          <a href="https://wa.me/5543998073376?text=Ol%C3%A1%2C%20queria%20conhecer%20as%20linhas%20de%20velas%20da%20Krystal!" target="_blank" rel="noreferrer" className="bg-wine hover:bg-wine/90 text-white font-bold uppercase tracking-widest text-sm py-4 px-10 rounded-full shadow-2xl hover:-translate-y-1 hover:shadow-wine/30 transition-all flex justify-center items-center">
+          <a href="https://wa.me/5543998073376?text=Ol%C3%A1%2C%20queria%20conhecer%20as%20linhas%20de%20velas%20da%20Krystal!" target="_blank" rel="noreferrer" className="bg-orange-500 hover:bg-orange-600 text-white font-bold uppercase tracking-widest text-sm py-4 px-10 rounded-full shadow-2xl hover:-translate-y-1 hover:shadow-orange-500/30 transition-all flex justify-center items-center">
             Adquira Nossas Linhas
           </a>
           <a href="#produtos" className="bg-transparent border border-brown/20 text-brown hover:border-gold hover:text-brown hover:bg-gold/10 font-bold uppercase tracking-widest text-sm py-4 px-10 rounded-full transition-all flex justify-center items-center">

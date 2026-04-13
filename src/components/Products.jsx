@@ -169,7 +169,7 @@ export default function Products() {
               <p className="text-brown/70 max-w-2xl mx-auto mb-8 font-light text-lg md:text-xl leading-relaxed relative z-10">
                 Lojistas, paróquias organizadas e empresas de eventos têm acesso direto à nossa tabela de faturamento fabril. 
               </p>
-              <a href="https://wa.me/5543998073376?text=Ol%C3%A1%2C%20queria%20acesso%20a%20tabela%20de%20Atacado%20para%20Lojista/Eventos." target="_blank" rel="noreferrer" className="relative z-10 bg-wine hover:bg-wine/90 text-white font-bold uppercase tracking-widest text-sm py-4 px-12 rounded-full transition-all inline-block shadow-xl shadow-wine/20 hover:-translate-y-1">
+              <a href="https://wa.me/5543998073376?text=Ol%C3%A1%2C%20queria%20acesso%20a%20tabela%20de%20Atacado%20para%20Lojista/Eventos." target="_blank" rel="noreferrer" className="relative z-10 bg-orange-500 hover:bg-orange-600 text-white font-bold uppercase tracking-widest text-sm py-4 px-12 rounded-full transition-all inline-block shadow-xl shadow-orange-500/20 hover:-translate-y-1">
                 Falar com Vendas (Atacado)
               </a>
             </div>

@@ -45,7 +45,7 @@ export default function Tradition() {
               </div>
             </div>
 
-            <a href="https://wa.me/5543999999999?text=Olá!%20Estou%20no%20site%20da%20Krystal%20Velas%20e%20gostaria%20de%20falar%20com%20um%20Consultor%20Comercial." target="_blank" rel="noopener noreferrer" className="inline-block px-8 py-4 bg-wine hover:bg-wine/90 text-white font-bold rounded-full transition-all hover:scale-105 shadow-xl shadow-wine/20 uppercase tracking-widest text-sm">
+            <a href="https://wa.me/5543999999999?text=Olá!%20Estou%20no%20site%20da%20Krystal%20Velas%20e%20gostaria%20de%20falar%20com%20um%20Consultor%20Comercial." target="_blank" rel="noopener noreferrer" className="inline-block px-8 py-4 bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-full transition-all hover:scale-105 shadow-xl shadow-orange-500/20 uppercase tracking-widest text-sm">
               Falar com um Consultor
             </a>
 
