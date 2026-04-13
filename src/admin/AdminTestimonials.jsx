@@ -1,19 +1,22 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import DOMPurify from 'dompurify';
-import { Plus, Trash2, Eye, EyeOff, CheckCircle, AlertCircle } from 'lucide-react';
+import { Plus, Trash2, Eye, EyeOff, CheckCircle, AlertCircle, MessageSquare } from 'lucide-react';
 
-const SOURCES = ['google', 'instagram', 'facebook'];
+const SOURCES = ['google', 'instagram', 'facebook', 'whatsapp'];
 
-const SourceBadge = ({ source }) => {
-  const map = {
-    google: { color: 'bg-blue-500/20 text-blue-300 border-blue-500/30', label: 'Google' },
-    instagram: { color: 'bg-pink-500/20 text-pink-300 border-pink-500/30', label: 'Instagram' },
-    facebook: { color: 'bg-indigo-500/20 text-indigo-300 border-indigo-500/30', label: 'Facebook' },
-  };
-  const s = map[source] || map.google;
-  return <span className={`text-[10px] font-bold uppercase tracking-widest px-2 py-1 rounded-full border ${s.color}`}>{s.label}</span>;
+const SOURCE_STYLE = {
+  google:    'bg-blue-50 text-blue-600 border-blue-200',
+  instagram: 'bg-pink-50 text-pink-600 border-pink-200',
+  facebook:  'bg-indigo-50 text-indigo-600 border-indigo-200',
+  whatsapp:  'bg-green-50 text-green-700 border-green-200',
 };
+
+const SourceBadge = ({ source }) => (
+  <span className={`text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full border ${SOURCE_STYLE[source] || SOURCE_STYLE.google}`}>
+    {source}
+  </span>
+);
 
 export default function AdminTestimonials() {
   const [list, setList] = useState([]);
@@ -40,21 +43,21 @@ export default function AdminTestimonials() {
       return;
     }
     setSaving(true);
-    const clean = {
+    const { error } = await supabase.from('testimonials').insert({
       author: sanitize(form.author),
       role: sanitize(form.role),
       location: sanitize(form.location),
       quote: sanitize(form.quote),
       source: form.source,
       active: true,
-    };
-    const { error } = await supabase.from('testimonials').insert(clean);
+    });
     setSaving(false);
     if (error) {
       setMessage({ type: 'error', text: 'Erro ao salvar: ' + error.message });
     } else {
-      setMessage({ type: 'success', text: 'Depoimento publicado!' });
+      setMessage({ type: 'success', text: 'Depoimento publicado com sucesso!' });
       setForm({ author: '', role: '', location: '', quote: '', source: 'google' });
+      setTimeout(() => setMessage(null), 3000);
       load();
     }
   };
@@ -70,74 +73,120 @@ export default function AdminTestimonials() {
     setList(prev => prev.filter(t => t.id !== id));
   };
 
+  const inputClass = "w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-orange-400 focus:ring-1 focus:ring-orange-400/20 transition-colors placeholder:text-gray-400";
+
   return (
     <div className="space-y-8">
       <div>
-        <h2 className="text-2xl font-serif text-white mb-1">Depoimentos</h2>
-        <p className="text-white/40 text-sm">Adicione e gerencie prova social. Só os ativos aparecem no site.</p>
+        <h2 className="text-2xl font-serif text-gray-900 dark:text-white mb-1">Depoimentos</h2>
+        <p className="text-gray-500 dark:text-white/40 text-sm">Adicione e gerencie prova social. Só os ativos aparecem no site.</p>
       </div>
 
       {/* Add Form */}
-      <form onSubmit={handleAdd} className="bg-white/5 border border-white/10 rounded-2xl p-6 space-y-4">
-        <h3 className="text-white font-bold text-sm uppercase tracking-widest">Novo Depoimento</h3>
-        <div className="grid md:grid-cols-3 gap-4">
+      <div className="bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-2xl p-6 space-y-4">
+        <h3 className="text-gray-800 dark:text-white font-bold text-sm uppercase tracking-widest flex items-center gap-2">
+          <Plus size={16} className="text-orange-500" /> Novo Depoimento
+        </h3>
+        <form onSubmit={handleAdd} className="space-y-4">
+          <div className="grid md:grid-cols-3 gap-4">
+            <div>
+              <label className="text-gray-500 text-xs font-bold uppercase tracking-widest block mb-1.5">Nome *</label>
+              <input value={form.author} onChange={e => setForm({...form, author: e.target.value})} type="text" maxLength={80} placeholder="Maria Silva" className={inputClass} />
+            </div>
+            <div>
+              <label className="text-gray-500 text-xs font-bold uppercase tracking-widest block mb-1.5">Cargo / Perfil</label>
+              <input value={form.role} onChange={e => setForm({...form, role: e.target.value})} type="text" maxLength={80} placeholder="Decoradora de Eventos" className={inputClass} />
+            </div>
+            <div>
+              <label className="text-gray-500 text-xs font-bold uppercase tracking-widest block mb-1.5">Cidade</label>
+              <input value={form.location} onChange={e => setForm({...form, location: e.target.value})} type="text" maxLength={60} placeholder="Londrina - PR" className={inputClass} />
+            </div>
+          </div>
+
           <div>
-            <label className="text-white/40 text-xs uppercase tracking-widest block mb-1">Nome *</label>
-            <input value={form.author} onChange={e => setForm({...form, author: e.target.value})} type="text" maxLength={80} placeholder="Maria Silva" className="w-full bg-white/5 border border-white/10 text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-orange-500/50" />
+            <label className="text-gray-500 text-xs font-bold uppercase tracking-widest block mb-1.5">Depoimento *</label>
+            <textarea value={form.quote} onChange={e => setForm({...form, quote: e.target.value})} rows={3} maxLength={400} placeholder="Escreva o texto do depoimento aqui..."
+              className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-orange-400 focus:ring-1 focus:ring-orange-400/20 resize-none placeholder:text-gray-400" />
+            <p className="text-gray-400 text-xs mt-1 text-right">{form.quote.length}/400</p>
           </div>
-          <div>
-            <label className="text-white/40 text-xs uppercase tracking-widest block mb-1">Cargo / Perfil</label>
-            <input value={form.role} onChange={e => setForm({...form, role: e.target.value})} type="text" maxLength={80} placeholder="Decoradora de Eventos" className="w-full bg-white/5 border border-white/10 text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-orange-500/50" />
+
+          <div className="flex items-end gap-4">
+            <div className="flex-1">
+              <label className="text-gray-500 text-xs font-bold uppercase tracking-widest block mb-1.5">Origem</label>
+              <select value={form.source} onChange={e => setForm({...form, source: e.target.value})}
+                className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-orange-400">
+                {SOURCES.map(s => <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>)}
+              </select>
+            </div>
+            <button type="submit" disabled={saving}
+              className="bg-orange-500 hover:bg-orange-600 disabled:opacity-40 text-white font-bold px-6 py-2.5 rounded-xl text-sm uppercase tracking-widest flex items-center gap-2 transition-colors">
+              <Plus size={16} /> {saving ? 'Salvando...' : 'Publicar'}
+            </button>
           </div>
-          <div>
-            <label className="text-white/40 text-xs uppercase tracking-widest block mb-1">Cidade</label>
-            <input value={form.location} onChange={e => setForm({...form, location: e.target.value})} type="text" maxLength={60} placeholder="Londrina - PR" className="w-full bg-white/5 border border-white/10 text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-orange-500/50" />
-          </div>
-        </div>
-        <div>
-          <label className="text-white/40 text-xs uppercase tracking-widest block mb-1">Depoimento *</label>
-          <textarea value={form.quote} onChange={e => setForm({...form, quote: e.target.value})} rows={3} maxLength={400} placeholder="Escreva o texto do depoimento aqui..." className="w-full bg-white/5 border border-white/10 text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-orange-500/50 resize-none" />
-          <p className="text-white/20 text-xs mt-1 text-right">{form.quote.length}/400</p>
-        </div>
-        <div className="flex items-end gap-4">
-          <div className="flex-1">
-            <label className="text-white/40 text-xs uppercase tracking-widest block mb-1">Origem</label>
-            <select value={form.source} onChange={e => setForm({...form, source: e.target.value})} className="w-full bg-[#2d1407] border border-white/10 text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none">
-              {SOURCES.map(s => <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>)}
-            </select>
-          </div>
-          <button type="submit" disabled={saving} className="bg-orange-500 hover:bg-orange-600 disabled:opacity-40 text-white font-bold px-6 py-2.5 rounded-xl text-sm uppercase tracking-widest flex items-center gap-2 transition-colors">
-            <Plus size={16} /> {saving ? 'Salvando...' : 'Publicar'}
-          </button>
-        </div>
-        {message && (
-          <div className={`flex items-center gap-2 text-sm rounded-xl px-4 py-3 ${message.type === 'success' ? 'bg-green-500/10 border border-green-500/30 text-green-400' : 'bg-red-500/10 border border-red-500/30 text-red-400'}`}>
-            {message.type === 'success' ? <CheckCircle size={16} /> : <AlertCircle size={16} />}
-            {message.text}
-          </div>
-        )}
-      </form>
+
+          {message && (
+            <div className={`flex items-center gap-2 text-sm rounded-xl px-4 py-3 border ${
+              message.type === 'success'
+                ? 'bg-green-50 border-green-200 text-green-700'
+                : 'bg-red-50 border-red-200 text-red-700'
+            }`}>
+              {message.type === 'success' ? <CheckCircle size={16} /> : <AlertCircle size={16} />}
+              {message.text}
+            </div>
+          )}
+        </form>
+      </div>
 
       {/* List */}
       <div className="space-y-3">
-        <h3 className="text-white/60 text-xs font-bold uppercase tracking-widest">Publicados ({list.length})</h3>
-        {loading && <p className="text-white/30 text-sm">Carregando...</p>}
+        <div className="flex items-center justify-between">
+          <h3 className="text-gray-500 text-xs font-bold uppercase tracking-widest">
+            Publicados ({list.length})
+          </h3>
+          {list.filter(t => !t.active).length > 0 && (
+            <span className="text-xs text-yellow-600 font-bold">{list.filter(t => !t.active).length} oculto(s)</span>
+          )}
+        </div>
+
+        {loading && (
+          <div className="space-y-3">
+            {[1,2].map(i => <div key={i} className="bg-gray-100 animate-pulse rounded-2xl h-24" />)}
+          </div>
+        )}
+
+        {!loading && list.length === 0 && (
+          <div className="border-2 border-dashed border-gray-200 rounded-2xl p-10 text-center">
+            <MessageSquare className="mx-auto mb-3 text-gray-300" size={32} />
+            <p className="text-gray-400 text-sm font-medium">Nenhum depoimento cadastrado</p>
+            <p className="text-gray-300 text-xs mt-1">Adicione o primeiro depoimento acima</p>
+          </div>
+        )}
+
         {list.map(item => (
-          <div key={item.id} className={`bg-white/5 border ${item.active ? 'border-white/10' : 'border-white/5 opacity-50'} rounded-2xl p-5 flex items-start gap-4`}>
-            <div className="flex-1">
-              <div className="flex items-center gap-2 mb-2">
-                <p className="text-white font-bold text-sm">{item.author}</p>
+          <div key={item.id} className={`bg-white border rounded-2xl p-5 flex items-start gap-4 transition-opacity ${
+            item.active ? 'border-gray-200 shadow-sm' : 'border-gray-100 opacity-60'
+          }`}>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                <p className="text-gray-900 font-bold text-sm">{item.author}</p>
                 <SourceBadge source={item.source} />
-                {!item.active && <span className="text-[10px] bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 px-2 py-0.5 rounded-full font-bold uppercase tracking-widest">Oculto</span>}
+                {!item.active && (
+                  <span className="text-[10px] bg-yellow-50 text-yellow-700 border border-yellow-200 px-2 py-0.5 rounded-full font-bold uppercase tracking-widest">
+                    Oculto
+                  </span>
+                )}
               </div>
-              <p className="text-white/40 text-xs mb-2">{item.role} · {item.location}</p>
-              <p className="text-white/70 text-sm italic">"{item.quote}"</p>
+              <p className="text-gray-400 text-xs mb-2">{item.role}{item.role && item.location ? ' · ' : ''}{item.location}</p>
+              <p className="text-gray-600 text-sm italic leading-relaxed">"{item.quote}"</p>
             </div>
             <div className="flex gap-2 shrink-0">
-              <button onClick={() => toggleActive(item)} className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-white/40 hover:text-white transition-colors" title={item.active ? 'Ocultar' : 'Mostrar'}>
+              <button onClick={() => toggleActive(item)}
+                className="p-2 rounded-xl border border-gray-200 hover:border-orange-200 text-gray-400 hover:text-orange-500 transition-colors"
+                title={item.active ? 'Ocultar' : 'Mostrar'}>
                 {item.active ? <Eye size={16} /> : <EyeOff size={16} />}
               </button>
-              <button onClick={() => handleDelete(item.id)} className="p-2 rounded-xl bg-white/5 hover:bg-red-500/20 text-white/40 hover:text-red-400 transition-colors">
+              <button onClick={() => handleDelete(item.id)}
+                className="p-2 rounded-xl border border-gray-200 hover:border-red-200 text-gray-400 hover:text-red-500 transition-colors">
                 <Trash2 size={16} />
               </button>
             </div>
