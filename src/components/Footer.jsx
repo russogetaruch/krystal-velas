@@ -3,7 +3,10 @@ import { MapPin, Phone, Mail } from 'lucide-react';
 
 export default function Footer() {
   return (
-    <footer id="contato" className="bg-brown pt-20 pb-8 text-white border-t-4 border-gold relative overflow-hidden">
+    <footer id="contato" className="bg-brown pt-24 pb-8 text-white relative overflow-hidden">
+      {/* Separador Brilho de Chama - Efeito Elite */}
+      <div className="absolute top-0 left-0 w-full h-[3px] z-20" style={{background: 'linear-gradient(to right, transparent 0%, #EA580C 20%, #F59E0B 50%, #EA580C 80%, transparent 100%)'}} />
+      <div className="absolute top-0 left-0 w-full h-16 z-10 pointer-events-none" style={{background: 'linear-gradient(to bottom, rgba(234,88,12,0.15) 0%, transparent 100%)'}} />
       <div className="absolute inset-0 bg-wine/5 z-0 pointer-events-none" />
       
       <div className="max-w-7xl mx-auto px-6 relative z-10">
@@ -18,8 +21,8 @@ export default function Footer() {
             transition={{ duration: 0.6 }}
             className="flex flex-col items-center md:items-start"
           >
-            <div className="mb-6 opacity-90 hover:opacity-100 transition-opacity mix-blend-screen">
-              <img src="/logo.png" alt="Logo Krystal Velas" className="h-[75px] w-auto filter brightness-0 invert" />
+            <div className="mb-6 hover:opacity-90 transition-opacity">
+              <img src="/logo.png" alt="Logo Krystal Velas" className="h-[75px] w-auto drop-shadow-lg" />
             </div>
             <h4 className="font-serif text-3xl text-white mb-2 tracking-wide text-center md:text-left drop-shadow-md">
               A luz que nos conduz
