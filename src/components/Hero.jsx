@@ -2,7 +2,7 @@ import { motion } from 'framer-motion';
 
 export default function Hero() {
   return (
-    <section id="hero" className="relative min-h-screen flex items-center justify-center pt-20 overflow-hidden bg-stone">
+    <section id="hero" className="relative min-h-screen flex items-center justify-center pt-20 overflow-hidden bg-stone pb-0">
       {/* Background Claro e Limpo */}
       <div className="absolute inset-0 z-0 opacity-40">
         <div className="absolute inset-0 bg-stone mix-blend-overlay z-10" />
@@ -73,8 +73,8 @@ export default function Hero() {
         </motion.div>
       </div>
 
-      {/* Gradiente sutil unificador com a próxima seção */}
-      <div className="absolute bottom-0 left-0 w-full h-32 bg-gradient-to-t from-cream to-transparent z-10" />
+      {/* Gradiente de transição suave para a próxima seção escura */}
+      <div className="absolute bottom-0 left-0 w-full h-48 bg-gradient-to-t from-wine/60 to-transparent z-10 pointer-events-none" />
     </section>
   );
 }

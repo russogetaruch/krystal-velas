@@ -34,8 +34,10 @@ export default function FAQ() {
   };
 
   return (
-    <section id="duvidas" className="py-24 bg-wine relative">
+    <section id="duvidas" className="py-24 bg-wine relative overflow-hidden">
       <div className="absolute inset-0 bg-black/40 mix-blend-multiply" />
+      {/* Fade de entrada vindo do Testimonials */}
+      <div className="absolute top-0 left-0 w-full h-20 bg-gradient-to-b from-wine to-transparent z-10 pointer-events-none" />
       
       <div className="max-w-4xl mx-auto px-6 relative z-10">
         <div className="text-center mb-16">
@@ -100,6 +102,8 @@ export default function FAQ() {
           ))}
         </div>
       </div>
+      {/* Fade de saída para o Footer escuro */}
+      <div className="absolute bottom-0 left-0 w-full h-20 bg-gradient-to-t from-brown to-transparent z-10 pointer-events-none" />
     </section>
   );
 }

@@ -86,6 +86,8 @@ export default function Testimonials() {
           ))}
         </div>
       </div>
+      {/* Fade para o FAQ escuro */}
+      <div className="absolute bottom-0 left-0 w-full h-24 bg-gradient-to-t from-wine/40 to-transparent z-10 pointer-events-none" />
     </section>
   );
 }

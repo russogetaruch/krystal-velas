@@ -9,7 +9,7 @@ const stats = [
 
 export default function SocialProof() {
   return (
-    <section className="bg-gradient-to-r from-wine to-brown py-16 relative border-t border-b border-gold/10 z-20">
+    <section className="bg-gradient-to-r from-wine to-brown py-16 relative border-t border-b border-gold/10 z-20 overflow-hidden">
       {/* Luzes Estéticas Atrás dos Números */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-1/2 left-1/4 -translate-y-1/2 w-64 h-64 bg-gold/10 blur-[100px] rounded-full" />
@@ -40,6 +40,10 @@ export default function SocialProof() {
           ))}
         </div>
       </div>
+      {/* Fade topo: cobre o corte abrupto vindo do Hero */}
+      <div className="absolute top-0 left-0 w-full h-12 bg-gradient-to-b from-wine to-transparent z-10 pointer-events-none" />
+      {/* Fade base: prepara transição suave para a seção clara seguinte */}
+      <div className="absolute bottom-0 left-0 w-full h-12 bg-gradient-to-t from-cream to-transparent z-10 pointer-events-none" />
     </section>
   );
 }
