@@ -22,7 +22,7 @@ export default function Navbar() {
         {/* Desktop Nav */}
         <nav className="hidden md:flex gap-10">
           {[
-            { name: 'Tradição', id: 'tradicao' },
+            { name: 'A Fábrica', id: 'tradicao' },
             { name: 'Diferenciais', id: 'diferenciais' },
             { name: 'Produtos', id: 'produtos' },
             { name: 'Dúvidas', id: 'duvidas' },
@@ -51,7 +51,7 @@ export default function Navbar() {
           >
             <div className="flex flex-col py-6 px-6 gap-6">
               {[
-                { name: 'Tradição', id: 'tradicao' },
+                { name: 'A Fábrica', id: 'tradicao' },
                 { name: 'Diferenciais', id: 'diferenciais' },
                 { name: 'Produtos', id: 'produtos' },
                 { name: 'Dúvidas', id: 'duvidas' },
