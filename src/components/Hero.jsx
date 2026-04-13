@@ -16,12 +16,12 @@ export default function Hero() {
       </div>
 
       <div className="relative z-10 px-4 max-w-5xl mx-auto flex flex-col items-center">
-        {/* Logo — entrada simples, sem animação infinita */}
+        {/* Logo — oculta em mobile, visível no desktop */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, ease: 'easeOut' }}
-          className="flex flex-col items-center mb-8 bg-white/90 px-12 py-8 rounded-[2rem] shadow-[0_20px_50px_rgba(45,20,7,0.08)] border border-wine/5"
+          className="hidden md:flex flex-col items-center mb-8 bg-white/90 px-12 py-8 rounded-[2rem] shadow-[0_20px_50px_rgba(45,20,7,0.08)] border border-wine/5"
         >
           <img src="/logo.png" alt="Logotipo Krystal" className="h-[90px] md:h-[110px] w-auto mb-2" fetchpriority="high" />
         </motion.div>
