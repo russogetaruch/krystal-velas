@@ -36,7 +36,7 @@ export default function Navbar() {
 
         {/* Mobile Toggle */}
         <button className="md:hidden" onClick={() => setMobileMenuOpen(!mobileMenuOpen)} aria-label="Abrir Menu">
-          {mobileMenuOpen ? <X size={32} className={isScrolled ? 'text-wine' : 'text-white drop-shadow-md'} /> : <Menu size={32} className={isScrolled ? 'text-wine' : 'text-white drop-shadow-md'} />}
+          {mobileMenuOpen ? <X size={32} className="text-white drop-shadow-md" /> : <Menu size={32} className="text-white drop-shadow-md" />}
         </button>
       </div>
 
