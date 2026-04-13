@@ -22,53 +22,60 @@ export default function AdminLogin({ onLogin }) {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#1a0a05] via-[#2d1407] to-[#1a0a05] flex items-center justify-center px-4">
+    <div className="min-h-screen bg-stone flex items-center justify-center px-4">
       <div className="w-full max-w-md">
-        {/* Logo */}
+
+        {/* Logo — direta, sem caixa */}
         <div className="text-center mb-10">
-          <div className="inline-flex flex-col items-center gap-4 mb-6">
-            <div className="bg-white/95 px-8 py-5 rounded-2xl shadow-2xl shadow-black/40 ring-1 ring-white/20">
-              <img src="/logo.png" alt="Krystal Velas" className="h-16 w-auto" />
-            </div>
-            <p className="text-white/30 text-[10px] tracking-[0.4em] uppercase font-bold">Painel Administrativo</p>
-          </div>
-          <h1 className="text-3xl font-serif text-white mb-2">Área Restrita</h1>
-          <p className="text-white/40 text-sm">Acesso exclusivo para administradores</p>
+          <img
+            src="/logo.png"
+            alt="Krystal Velas"
+            className="h-20 w-auto mx-auto mb-4 drop-shadow-sm"
+          />
+          <p className="text-gray-400 text-[10px] tracking-[0.4em] uppercase font-bold mb-6">
+            Painel Administrativo
+          </p>
+          <h1 className="text-3xl font-serif text-brown mb-2">Área Restrita</h1>
+          <p className="text-gray-500 text-sm">Acesso exclusivo para administradores</p>
         </div>
 
-        {/* Form */}
-        <form onSubmit={handleLogin} className="bg-white/5 border border-white/10 rounded-3xl p-8 backdrop-blur-sm space-y-5">
+        {/* Form Card */}
+        <form
+          onSubmit={handleLogin}
+          className="bg-white border border-gray-200 rounded-3xl p-8 shadow-xl shadow-brown/5 space-y-5"
+        >
           <div>
-            <label className="text-white/60 text-xs font-bold uppercase tracking-widest block mb-2">E-mail</label>
+            <label className="text-gray-500 text-xs font-bold uppercase tracking-widest block mb-2">E-mail</label>
             <div className="relative">
-              <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-white/30" size={16} />
+              <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
               <input
                 type="email"
                 required
                 value={email}
                 onChange={e => setEmail(e.target.value)}
-                className="w-full bg-white/5 border border-white/10 text-white rounded-xl pl-11 pr-4 py-3 text-sm focus:outline-none focus:border-orange-500/50 transition-colors placeholder:text-white/20"
+                className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-xl pl-11 pr-4 py-3 text-sm focus:outline-none focus:border-orange-400 transition-colors placeholder:text-gray-300"
                 placeholder="admin@krystalvelas.com.br"
               />
             </div>
           </div>
+
           <div>
-            <label className="text-white/60 text-xs font-bold uppercase tracking-widest block mb-2">Senha</label>
+            <label className="text-gray-500 text-xs font-bold uppercase tracking-widest block mb-2">Senha</label>
             <div className="relative">
-              <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-white/30" size={16} />
+              <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
               <input
                 type="password"
                 required
                 value={password}
                 onChange={e => setPassword(e.target.value)}
-                className="w-full bg-white/5 border border-white/10 text-white rounded-xl pl-11 pr-4 py-3 text-sm focus:outline-none focus:border-orange-500/50 transition-colors placeholder:text-white/20"
+                className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-xl pl-11 pr-4 py-3 text-sm focus:outline-none focus:border-orange-400 transition-colors placeholder:text-gray-300"
                 placeholder="••••••••"
               />
             </div>
           </div>
 
           {error && (
-            <div className="bg-red-500/10 border border-red-500/30 text-red-400 text-sm rounded-xl px-4 py-3">
+            <div className="bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl px-4 py-3">
               {error}
             </div>
           )}
@@ -82,10 +89,11 @@ export default function AdminLogin({ onLogin }) {
           </button>
         </form>
 
-        <p className="text-center text-white/20 text-xs mt-6">
+        <p className="text-center text-gray-400 text-xs mt-6">
           Acesso protegido por Supabase Auth · LGPD Compliant
         </p>
       </div>
     </div>
   );
 }
+
