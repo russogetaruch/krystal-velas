@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { supabase } from '../lib/supabase';
-import { Flame, Lock, Mail } from 'lucide-react';
+import { Lock, Mail } from 'lucide-react';
 
 export default function AdminLogin({ onLogin }) {
   const [email, setEmail] = useState('');
@@ -26,12 +26,11 @@ export default function AdminLogin({ onLogin }) {
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-10">
-          <div className="inline-flex items-center gap-3 bg-white/5 px-6 py-4 rounded-2xl border border-white/10 mb-6">
-            <Flame className="text-orange-400" size={32} />
-            <div className="text-left">
-              <p className="text-white font-bold text-lg tracking-wide">Krystal Velas</p>
-              <p className="text-white/40 text-xs tracking-widest uppercase">Painel Admin</p>
+          <div className="inline-flex flex-col items-center gap-4 mb-6">
+            <div className="bg-white/95 px-8 py-5 rounded-2xl shadow-2xl shadow-black/40 ring-1 ring-white/20">
+              <img src="/logo.png" alt="Krystal Velas" className="h-16 w-auto" />
             </div>
+            <p className="text-white/30 text-[10px] tracking-[0.4em] uppercase font-bold">Painel Administrativo</p>
           </div>
           <h1 className="text-3xl font-serif text-white mb-2">Área Restrita</h1>
           <p className="text-white/40 text-sm">Acesso exclusivo para administradores</p>

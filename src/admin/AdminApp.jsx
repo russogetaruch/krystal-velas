@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabase';
 import AdminGallery from './AdminGallery';
 import AdminTestimonials from './AdminTestimonials';
 import AdminContent from './AdminContent';
-import { Images, MessageSquare, FileText, LogOut, Flame, Menu, X } from 'lucide-react';
+import { Images, MessageSquare, FileText, LogOut, Menu, X } from 'lucide-react';
 
 const NAV = [
   { id: 'gallery', label: 'Galeria', icon: Images },
@@ -26,15 +26,12 @@ export default function AdminApp({ session, onLogout }) {
     <div className="min-h-screen bg-[#0f0602] flex">
       {/* Sidebar Desktop */}
       <aside className="hidden md:flex flex-col w-64 bg-[#1a0a05] border-r border-white/5 p-6">
-        {/* Brand */}
-        <div className="flex items-center gap-3 mb-10">
-          <div className="bg-orange-500/20 p-2 rounded-xl">
-            <Flame className="text-orange-400" size={20} />
+        {/* Logo */}
+        <div className="flex flex-col items-start gap-2 mb-10">
+          <div className="bg-white/95 px-4 py-2.5 rounded-xl shadow-lg shadow-black/30">
+            <img src="/logo.png" alt="Krystal Velas" className="h-10 w-auto" />
           </div>
-          <div>
-            <p className="text-white font-bold text-sm">Krystal Velas</p>
-            <p className="text-white/30 text-[10px] uppercase tracking-widest">Admin Panel</p>
-          </div>
+          <p className="text-white/25 text-[9px] tracking-[0.35em] uppercase font-bold pl-1">Painel Admin</p>
         </div>
 
         {/* Nav */}
@@ -72,9 +69,8 @@ export default function AdminApp({ session, onLogout }) {
 
       {/* Mobile Header */}
       <div className="md:hidden fixed top-0 left-0 right-0 bg-[#1a0a05] border-b border-white/5 z-50 px-4 py-3 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Flame className="text-orange-400" size={18} />
-          <span className="text-white font-bold text-sm">Admin Krystal</span>
+        <div className="bg-white/95 px-3 py-1.5 rounded-xl shadow-md">
+          <img src="/logo.png" alt="Krystal Velas" className="h-8 w-auto" />
         </div>
         <button onClick={() => setMobileOpen(!mobileOpen)} className="text-white/60">
           {mobileOpen ? <X size={24} /> : <Menu size={24} />}
