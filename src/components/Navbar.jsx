@@ -24,7 +24,7 @@ export default function Navbar() {
   }, []);
 
   const navItems = [
-    { name: 'A Fábrica', id: 'tradicao' },
+    { name: 'A Fábrica', id: 'fabrica' },
     { name: 'Diferenciais', id: 'diferenciais' },
     { name: 'Produtos', id: 'produtos' },
     { name: 'Dúvidas', id: 'duvidas' },

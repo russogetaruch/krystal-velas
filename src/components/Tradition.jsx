@@ -2,7 +2,7 @@ import { motion } from 'framer-motion';
 
 export default function Tradition() {
   return (
-    <section id="tradicao" className="py-24 bg-cream relative overflow-hidden">
+    <section id="fabrica" className="py-24 bg-cream relative overflow-hidden">
       {/* Decorative Glow */}
       <div className="absolute -top-40 -right-40 w-96 h-96 bg-gold/10 rounded-full blur-[100px] pointer-events-none" />
       
