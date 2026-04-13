@@ -47,15 +47,31 @@ export default function Footer() {
                 <span className="text-sm">R. Gen. Carneiro, 52 - Semprebom<br />Ibiporã - PR, 86200-000, Brasil</span>
               </li>
               <li>
-                <a href="https://wa.me/5543998073376?text=Ol%C3%A1%2C%20vim%20pelo%20site%20da%20Krystal%20Velas%20e%20gostaria%20de%20falar%20com%20o%20comercial." target="_blank" rel="noreferrer" className="flex items-center gap-3 hover:text-white transition-colors group">
-                  <Phone className="text-gold group-hover:scale-110 transition-transform" size={20} />
-                  <span className="text-sm font-bold">(43) 99807-3376</span>
+                <a
+                  href="https://wa.me/5543998073376?text=Ol%C3%A1%2C%20vim%20pelo%20site%20da%20Krystal%20Velas%20e%20gostaria%20de%20falar%20com%20o%20comercial."
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-3 hover:text-white transition-colors group"
+                >
+                  <Phone className="text-gold" size={20} />
+                  {/* Número ofuscado via CSS - bots leem o DOM, não o CSS */}
+                  <span
+                    className="text-sm font-bold"
+                    data-content="(43) 99807-3376"
+                    style={{fontVariantNumeric:'tabular-nums'}}
+                  >(43) 9&#x200B;9807&#x200B;-&#x200B;3376</span>
                 </a>
               </li>
               <li>
-                <a href="mailto:krystalvelasibipora@gmail.com" className="flex items-center gap-3 hover:text-white transition-colors group">
-                  <Mail className="text-gold group-hover:scale-110 transition-transform" size={20} />
-                  <span className="text-sm">krystalvelasibipora@gmail.com</span>
+                <a
+                  href="mailto:krystalvelasibipora@gmail.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-3 hover:text-white transition-colors group"
+                >
+                  <Mail className="text-gold" size={20} />
+                  {/* Email ofuscado: bots de spam leem texto literal, não entidades HTML */}
+                  <span className="text-sm">krystalvelas&#105;bipora&#64;gma&#105;l&#46;com</span>
                 </a>
               </li>
             </ul>

@@ -7,6 +7,7 @@ import Products from './components/Products';
 import Testimonials from './components/Testimonials';
 import FAQ from './components/FAQ';
 import Footer from './components/Footer';
+import CookieBanner from './components/CookieBanner';
 
 function App() {
   return (
@@ -22,6 +23,7 @@ function App() {
         <FAQ />
       </main>
       <Footer />
+      <CookieBanner />
     </div>
   );
 }
