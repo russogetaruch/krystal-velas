@@ -145,7 +145,9 @@ export default function Products() {
                 <img 
                   src={product.src} 
                   alt={product.name} 
-                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-out"
+                  loading="lazy"
+                  decoding="async"
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent flex items-end p-4 md:p-6 opacity-0 group-hover:opacity-100 transition-opacity">
                   <div>

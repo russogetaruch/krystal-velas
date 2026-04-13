@@ -60,7 +60,7 @@ export default function Tradition() {
           >
             <div className="rounded-[2rem] overflow-hidden shadow-2xl shadow-brown/20 relative">
               <div className="absolute inset-0 bg-wine/10 z-10 mix-blend-overlay" />
-              <img src="/hero-bg.png" alt="Estrutura de Fábrica Krystal Velas" className="w-full h-auto object-cover transform hover:scale-105 transition-transform duration-1000" />
+              <img src="/hero-bg.png" alt="Estrutura de Fábrica Krystal Velas" loading="lazy" decoding="async" className="w-full h-auto object-cover" />
             </div>
           </motion.div>
         </div>
