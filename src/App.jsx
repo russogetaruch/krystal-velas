@@ -10,7 +10,7 @@ import Footer from './components/Footer';
 
 function App() {
   return (
-    <div className="font-sans antialiased text-gray-900 bg-white selection:bg-gold selection:text-brown border-t-8 border-gold">
+    <div className="font-sans antialiased text-gray-900 bg-white selection:bg-gold selection:text-brown">
       <Navbar />
       <main>
         <Hero />
