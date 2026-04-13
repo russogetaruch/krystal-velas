@@ -13,7 +13,7 @@ export default function Navbar() {
   }, []);
 
   return (
-    <header className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 ${isScrolled ? 'bg-brown/95 backdrop-blur-md shadow-md border-b border-wine/20 py-4' : 'bg-transparent py-6'}`}>
+    <header className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 ${isScrolled ? 'bg-brown/95 backdrop-blur-md shadow-md border-b border-wine/20 py-4' : 'bg-gradient-to-b from-brown/80 via-brown/30 to-transparent py-6'}`}>
       <div className="max-w-7xl mx-auto px-6 flex justify-between items-center">
         <a href="#hero" className="flex items-center gap-3 group bg-white/95 px-5 py-2 rounded-full shadow-xl ring-2 ring-white/20" aria-label="Logo Krystal Velas">
           <img src="/logo.png" alt="Krystal Velas" className="h-8 md:h-10 w-auto transition-transform group-hover:scale-105" />
