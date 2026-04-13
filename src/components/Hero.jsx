@@ -2,56 +2,73 @@ import { motion } from 'framer-motion';
 
 export default function Hero() {
   return (
-    <section id="hero" className="relative min-h-screen flex items-center justify-center pt-20 overflow-hidden">
-      {/* Background com velas reais e proteção de contraste obscuro */}
-      <div className="absolute inset-0 z-0">
-        <div className="absolute inset-0 bg-brown/70 z-10" />
-        <img src="/votive-candles.png" alt="Velas Feitas em Ibiporã" className="w-full h-full object-cover scale-105" />
+    <section id="hero" className="relative min-h-screen flex items-center justify-center pt-20 overflow-hidden bg-stone">
+      {/* Background Claro e Limpo */}
+      <div className="absolute inset-0 z-0 opacity-40">
+        <div className="absolute inset-0 bg-stone mix-blend-overlay z-10" />
+        <img src="/votive-candles.png" alt="Velas Feitas em Ibiporã" className="w-full h-full object-cover grayscale-[30%] opacity-80" />
       </div>
 
-      <div className="relative z-10 text-center px-4 max-w-4xl mx-auto flex flex-col items-center">
-        {/* Antigravity Logo Entrando */}
+      <div className="relative z-10 px-4 max-w-5xl mx-auto flex flex-col items-center">
+        {/* Antigravity Logo Floating */}
         <motion.div 
-          initial={{ opacity: 0, y: -40 }} 
-          animate={{ opacity: 1, y: 0 }} 
-          transition={{ duration: 1, ease: 'easeOut' }} 
-          className="flex flex-col items-center mb-8 bg-white/95 px-10 py-8 rounded-[2rem] shadow-[0_10px_30px_rgba(255,255,255,0.05)] ring-4 ring-white/10"
+          initial={{ opacity: 0, y: 20 }} 
+          animate={{ opacity: 1, y: [0, -10, 0] }} 
+          transition={{ 
+            y: { repeat: Infinity, duration: 5, ease: "easeInOut" },
+            opacity: { duration: 1 }
+          }} 
+          className="flex flex-col items-center mb-8 bg-white/80 backdrop-blur-md px-12 py-8 rounded-[2rem] shadow-[0_20px_50px_rgba(45,20,7,0.05)] border border-wine/5"
         >
           <img src="/logo.png" alt="Logotipo Krystal" className="h-[90px] md:h-[110px] w-auto drop-shadow-sm mb-2" />
         </motion.div>
 
-        {/* Slogan Rigoroso */}
-        <motion.h1 
-          initial={{ opacity: 0, scale: 0.95 }} 
-          animate={{ opacity: 1, scale: 1 }} 
-          transition={{ delay: 0.4, duration: 0.8 }} 
-          className="font-serif text-5xl md:text-7xl text-white mb-6 tracking-wide drop-shadow-xl"
-        >
-          A luz que <span className="text-gold italic font-light">&nbsp;nos conduz</span>
-        </motion.h1>
+        {/* Slogan Híbrido */}
+        <div className="text-center mb-8">
+          <motion.h1 
+            initial={{ opacity: 0, scale: 0.95 }} 
+            animate={{ opacity: 1, scale: 1 }} 
+            transition={{ delay: 0.2, duration: 0.8 }} 
+            className="font-serif text-5xl md:text-7xl text-wine mb-4 tracking-tight drop-shadow-sm"
+          >
+            A luz que <span className="text-gold italic font-light">&nbsp;nos conduz</span>
+          </motion.h1>
+          <motion.p 
+            initial={{ opacity: 0 }} 
+            animate={{ opacity: 1 }} 
+            transition={{ delay: 0.4, duration: 1 }} 
+            className="uppercase tracking-[0.3em] text-xs font-bold text-brown/60"
+          >
+            Da Fé ao Conforto do Lar
+          </motion.p>
+        </div>
 
-        {/* Copy Focada */}
-        <motion.p 
-          initial={{ opacity: 0 }} 
-          animate={{ opacity: 1 }} 
-          transition={{ delay: 0.8, duration: 1 }} 
-          className="text-lg md:text-2xl text-cream/90 font-light max-w-2xl mx-auto mb-10 leading-relaxed font-sans"
+        {/* Texto de Destaque exigido pelo QA */}
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }} 
+          animate={{ opacity: 1, y: 0 }} 
+          transition={{ delay: 0.6, duration: 0.8 }} 
+          className="max-w-3xl mx-auto mb-12 relative"
         >
-          Fabricantes de velas religiosas e votivas corporativas. <br className="hidden md:block" />Tradição em pureza operando do coração de Ibiporã-PR.
-        </motion.p>
+          <div className="absolute -left-6 top-0 text-6xl text-gold/30 font-serif leading-none">"</div>
+          <p className="text-xl md:text-2xl text-brown/90 font-light text-center leading-relaxed font-sans px-8">
+            De Ibiporã para todos os seus momentos. Seja para um instante de oração ou para iluminar um jantar especial, a <strong className="font-semibold text-wine">Krystal Velas</strong> entrega a pureza que você exige.
+          </p>
+          <div className="absolute -right-2 -bottom-8 text-6xl text-gold/30 font-serif leading-none rotate-180">"</div>
+        </motion.div>
 
         {/* Área de CTA */}
         <motion.div 
           initial={{ opacity: 0, y: 20 }} 
           animate={{ opacity: 1, y: 0 }} 
-          transition={{ delay: 1, duration: 0.6 }} 
+          transition={{ delay: 0.8, duration: 0.6 }} 
           className="flex flex-col sm:flex-row gap-5 justify-center w-full sm:w-auto"
         >
-          <a href="https://wa.me/5543998073376?text=Ol%C3%A1%2C%20acessei%20o%20site%20da%20Krystal%20Velas%20e%20gostaria%20de%20fazer%20um%20or%C3%A7amento%20no%20atacado." target="_blank" rel="noreferrer" className="bg-gradient-to-r from-gold to-orange-600 text-white font-bold uppercase tracking-widest text-sm py-4 px-10 rounded-full shadow-[0_10px_30px_rgba(245,158,11,0.4)] hover:-translate-y-1 hover:shadow-[0_20px_40px_rgba(245,158,11,0.6)] transition-all flex justify-center items-center">
-            Orçamento no Atacado
+          <a href="https://wa.me/5543998073376?text=Ol%C3%A1%2C%20queria%20conhecer%20as%20linhas%20de%20velas%20da%20Krystal!" target="_blank" rel="noreferrer" className="bg-wine hover:bg-wine/90 text-white font-bold uppercase tracking-widest text-sm py-4 px-10 rounded-full shadow-2xl hover:-translate-y-1 hover:shadow-wine/30 transition-all flex justify-center items-center">
+            Adquira Nossas Linhas
           </a>
-          <a href="#produtos" className="bg-transparent border border-white/40 text-white hover:border-gold hover:text-gold hover:bg-white/5 font-bold uppercase tracking-widest text-sm py-4 px-10 rounded-full transition-all flex justify-center items-center">
-            Explorar Linhas
+          <a href="#produtos" className="bg-transparent border border-brown/20 text-brown hover:border-gold hover:text-brown hover:bg-gold/10 font-bold uppercase tracking-widest text-sm py-4 px-10 rounded-full transition-all flex justify-center items-center">
+            Explorar Categorias
           </a>
         </motion.div>
       </div>

@@ -1,38 +1,38 @@
 import { motion } from 'framer-motion';
-import { Flame, ShieldCheck, Truck, BadgeCheck } from 'lucide-react';
+import { Flame, Star, Home, BadgeCheck } from 'lucide-react';
 
 const differentials = [
   { 
     id: 1, 
     icon: Flame, 
-    title: 'Parafina 100% Pura', 
-    desc: 'Não produz fumaça preta corrosiva. Formulação química importada que garante chama constante e preserva as paredes do ambiente.' 
+    title: 'Queima Premium', 
+    desc: 'Formulação pura que não produz fumaça preta ou resíduos. Garantimos uma chama elegante, inodora e constante para iluminar os seus melhores momentos.' 
   },
   { 
     id: 2, 
-    icon: Truck, 
-    title: 'Logística de Alta Baixa', 
-    desc: 'Frota terceirizada adaptada. Suportamos envio de toneladas semanais sem risco de derretimento da carga durante o trajeto.' 
+    icon: Star, 
+    title: 'Atmosfera e Cenografia', 
+    desc: 'Desenvolvidos para protagonizar mesas de jantar luxuosas, casamentos e decorações de alto padrão. Beleza estética antes, durante e depois da queima.' 
   },
   { 
     id: 3, 
-    icon: BadgeCheck, 
-    title: 'Garantia de 7 Dias', 
-    desc: 'Nossa engenharia votiva garante a queima calculada de exatos 7 dias nos cilindros 298g em ambientes controlados.' 
+    icon: Home, 
+    title: 'Lar e Aconchego', 
+    desc: 'Velas modeladas para transformar a energia de qualquer cômodo. Leve paz, relaxamento e um toque sofisticado de design industrial para dentro de casa.' 
   },
   { 
     id: 4, 
-    icon: ShieldCheck, 
-    title: 'Zero Terceiros', 
-    desc: 'Preço enxuto. Você compra diretamente de nosso pavilhão de maquinário em Ibiporã-PR, pagando a métrica exata da fábrica.' 
+    icon: BadgeCheck, 
+    title: 'Qualidade Fabril', 
+    desc: 'Compra simplificada com preço direto da nossa indústria no Paraná. Padronização absoluta para eventos, varejistas, atacadistas e paróquias.' 
   }
 ];
 
 export default function Differentials() {
   return (
-    <section id="diferenciais" className="py-24 bg-brown relative overflow-hidden">
-      {/* Pattern Elegante */}
-      <div className="absolute inset-0 opacity-5" style={{ backgroundImage: 'radial-gradient(#F59E0B 1px, transparent 1px)', backgroundSize: '32px 32px' }} />
+    <section id="diferenciais" className="py-24 bg-stone relative overflow-hidden">
+      {/* Pattern Elegante Claro */}
+      <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(#5C1917 1px, transparent 1px)', backgroundSize: '32px 32px' }} />
 
       <div className="max-w-7xl mx-auto px-6 relative z-10">
         <div className="text-center mb-16 max-w-3xl mx-auto">
@@ -40,20 +40,20 @@ export default function Differentials() {
             initial={{ opacity: 0, y: -10 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="text-gold font-bold tracking-[0.3em] uppercase text-xs mb-4"
+            className="text-brown/70 font-bold tracking-[0.3em] uppercase text-xs mb-4"
           >
-            A Engenharia da Marca
+            Nossas Assinaturas
           </motion.p>
           <motion.h2 
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
-            className="font-serif text-4xl md:text-5xl text-white mb-6"
+            className="font-serif text-4xl md:text-5xl text-wine mb-6"
           >
-            Ninguém no Paraná Faz Dessa Forma
+            A Luz Desenhada para Você
           </motion.h2>
-          <div className="h-px bg-white/10 w-24 mx-auto" />
+          <div className="h-px bg-wine/10 w-24 mx-auto" />
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
@@ -66,13 +66,13 @@ export default function Differentials() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, margin: "-50px" }}
                 transition={{ duration: 0.5, delay: i * 0.15 }}
-                className="bg-white/5 border border-white/10 rounded-3xl p-8 hover:bg-white/10 hover:-translate-y-2 hover:border-gold/30 transition-all duration-300 group"
+                className="bg-white border border-wine/10 rounded-3xl p-8 hover:bg-cream hover:-translate-y-2 hover:border-gold/50 shadow-sm hover:shadow-xl hover:shadow-wine/5 transition-all duration-300 group"
               >
-                <div className="w-14 h-14 bg-wine/50 rounded-2xl flex items-center justify-center mb-6 ring-1 ring-white/10 group-hover:bg-gold group-hover:ring-gold/50 transition-colors">
-                  <Icon className="text-gold group-hover:text-brown transition-colors" size={28} />
+                <div className="w-14 h-14 bg-stone rounded-2xl flex items-center justify-center mb-6 ring-1 ring-wine/10 group-hover:bg-wine group-hover:ring-wine/30 transition-colors">
+                  <Icon className="text-wine group-hover:text-gold transition-colors" size={28} />
                 </div>
-                <h3 className="text-xl font-bold text-white mb-4 tracking-wide group-hover:text-gold transition-colors">{diff.title}</h3>
-                <p className="text-white/60 font-light leading-relaxed text-sm">
+                <h3 className="text-xl font-bold text-brown mb-4 tracking-wide group-hover:text-wine transition-colors">{diff.title}</h3>
+                <p className="text-brown/70 font-light leading-relaxed text-sm">
                   {diff.desc}
                 </p>
               </motion.div>
