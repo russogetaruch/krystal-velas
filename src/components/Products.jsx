@@ -17,6 +17,7 @@ const products = [
   { id: 14, name: 'Vela Verde', category: 'casa', imgCategory: 'Cura & Bem Estar', src: '/produtos/vela14.png' },
   { id: 3, name: 'Votivas Coloridas', category: 'casa', imgCategory: 'Design Interior', src: '/produtos/vela3.png' },
   { id: 15, name: 'Votiva Amarela', category: 'casa', imgCategory: 'Iluminação Quente', src: '/produtos/vela15.png' },
+  { id: 161, name: 'Espectro de Cores', category: 'casa', imgCategory: 'Coleção Completa', src: '/produtos/vela16.png' },
 
   // EVENTOS / EMPRESAS
   { id: 7, name: 'Caixas de Lote', category: 'evento', imgCategory: 'Atacado B2B', src: '/produtos/vela7.png' },
