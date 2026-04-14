@@ -1,47 +1,187 @@
 import { useState, useRef, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { Upload, X, CheckCircle, AlertCircle, ImagePlus, Trash2, RefreshCw } from 'lucide-react';
+import { Upload, X, CheckCircle, AlertCircle, ImagePlus, Trash2, RefreshCw, Pencil, Save } from 'lucide-react';
 
 const ALLOWED_TYPES = ['image/webp', 'image/png', 'image/jpeg', 'image/jpg'];
 const MAX_SIZE_MB = 3;
 const CATEGORIES = [
-  { id: 'casa', label: 'Para sua Casa' },
+  { id: 'casa',   label: 'Para sua Casa' },
   { id: 'evento', label: 'Suas Celebrações' },
-  { id: 'fe', label: 'Para sua Fé' },
+  { id: 'fe',     label: 'Para sua Fé' },
 ];
 
+// ─── Modal de edição ───────────────────────────────────────────────────────────
+function EditModal({ item, onClose, onSaved }) {
+  const [name, setName]           = useState(item.name);
+  const [category, setCategory]   = useState(item.category);
+  const [imgCategory, setImgCategory] = useState(item.img_category || '');
+  const [newFile, setNewFile]     = useState(null);
+  const [preview, setPreview]     = useState(item.src);
+  const [saving, setSaving]       = useState(false);
+  const [error, setError]         = useState(null);
+  const inputRef = useRef();
+
+  const handleFile = (f) => {
+    if (!f) return;
+    if (!ALLOWED_TYPES.includes(f.type)) { setError('Use WebP, PNG ou JPG.'); return; }
+    if (f.size > MAX_SIZE_MB * 1024 * 1024) { setError(`Máximo ${MAX_SIZE_MB}MB.`); return; }
+    setNewFile(f);
+    setPreview(URL.createObjectURL(f));
+    setError(null);
+  };
+
+  const handleSave = async () => {
+    if (!name.trim()) { setError('O nome é obrigatório.'); return; }
+    setSaving(true);
+    setError(null);
+
+    let src = item.src;
+    let storagePath = item.storage_path;
+
+    // Se trocou a imagem → faz upload novo
+    if (newFile) {
+      const ext = newFile.name.split('.').pop();
+      const path = `gallery/${Date.now()}.${ext}`;
+      const { error: upErr } = await supabase.storage
+        .from('gallery').upload(path, newFile, { cacheControl: '3600', upsert: false, contentType: newFile.type });
+      if (upErr) { setError('Erro no upload: ' + upErr.message); setSaving(false); return; }
+
+      // Remove imagem antiga do storage (só se não for local)
+      if (storagePath && !storagePath.startsWith('local/')) {
+        await supabase.storage.from('gallery').remove([storagePath]);
+      }
+
+      const { data: urlData } = supabase.storage.from('gallery').getPublicUrl(path);
+      src = urlData.publicUrl;
+      storagePath = path;
+    }
+
+    const { error: dbErr } = await supabase.from('gallery').update({
+      name: name.trim(),
+      category,
+      img_category: imgCategory.trim(),
+      src,
+      storage_path: storagePath,
+    }).eq('id', item.id);
+
+    setSaving(false);
+    if (dbErr) { setError('Erro ao salvar: ' + dbErr.message); return; }
+    onSaved();
+    onClose();
+  };
+
+  const inputClass = "w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-orange-400 focus:ring-1 focus:ring-orange-400/20 transition-colors placeholder:text-gray-400";
+
+  return (
+    // Overlay
+    <div className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={onClose}>
+      <div
+        className="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden"
+        onClick={e => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100">
+          <div>
+            <h3 className="text-gray-900 font-bold text-lg">Editar Foto</h3>
+            <p className="text-gray-400 text-xs mt-0.5">Altere nome, categoria ou substitua a imagem</p>
+          </div>
+          <button onClick={onClose} className="p-2 rounded-xl hover:bg-gray-100 text-gray-400 hover:text-gray-700 transition-colors">
+            <X size={20} />
+          </button>
+        </div>
+
+        {/* Body */}
+        <div className="p-6 space-y-5">
+          {/* Preview / Troca de imagem */}
+          <div
+            onClick={() => inputRef.current?.click()}
+            className="relative rounded-2xl overflow-hidden cursor-pointer group border-2 border-dashed border-gray-200 hover:border-orange-400 transition-colors"
+          >
+            <img src={preview} alt={name} className="w-full h-48 object-cover" />
+            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2">
+              <Upload size={28} className="text-white" />
+              <p className="text-white text-sm font-bold">Clique para trocar a imagem</p>
+              <p className="text-white/70 text-xs">WebP · PNG · JPG · Máx {MAX_SIZE_MB}MB</p>
+            </div>
+            <input ref={inputRef} type="file" accept=".webp,.png,.jpg,.jpeg" className="hidden" onChange={e => handleFile(e.target.files[0])} />
+            {newFile && (
+              <div className="absolute top-2 right-2 bg-orange-500 text-white text-[10px] font-bold px-2 py-1 rounded-full">
+                Nova imagem
+              </div>
+            )}
+          </div>
+
+          {/* Nome */}
+          <div>
+            <label className="text-gray-500 text-xs font-bold uppercase tracking-widest block mb-2">Nome do Produto *</label>
+            <input value={name} onChange={e => { setName(e.target.value); setError(null); }} type="text" maxLength={100} placeholder="Ex: Vela Votiva Branca 298g" className={inputClass} />
+          </div>
+
+          {/* Subcategoria */}
+          <div>
+            <label className="text-gray-500 text-xs font-bold uppercase tracking-widest block mb-2">Subcategoria / Linha</label>
+            <input value={imgCategory} onChange={e => setImgCategory(e.target.value)} type="text" maxLength={60} placeholder="Ex: Linha Votiva, Atacado B2B" className={inputClass} />
+          </div>
+
+          {/* Aba */}
+          <div>
+            <label className="text-gray-500 text-xs font-bold uppercase tracking-widest block mb-2">Aba da Vitrine</label>
+            <select value={category} onChange={e => setCategory(e.target.value)}
+              className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-orange-400">
+              {CATEGORIES.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
+            </select>
+          </div>
+
+          {/* Erro */}
+          {error && (
+            <div className="flex items-center gap-2 text-sm rounded-xl px-4 py-3 bg-red-50 border border-red-200 text-red-700">
+              <AlertCircle size={16} /> {error}
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="flex gap-3 px-6 pb-6">
+          <button onClick={onClose} className="flex-1 py-3 rounded-xl border border-gray-200 text-gray-600 font-bold text-sm hover:bg-gray-50 transition-colors">
+            Cancelar
+          </button>
+          <button onClick={handleSave} disabled={saving}
+            className="flex-1 py-3 rounded-xl bg-orange-500 hover:bg-orange-600 disabled:opacity-40 text-white font-bold text-sm flex items-center justify-center gap-2 transition-colors">
+            <Save size={15} />
+            {saving ? 'Salvando...' : 'Salvar Alterações'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Componente principal ──────────────────────────────────────────────────────
 export default function AdminGallery() {
-  const [dragging, setDragging] = useState(false);
-  const [preview, setPreview] = useState(null);
-  const [file, setFile] = useState(null);
-  const [category, setCategory] = useState('casa');
-  const [name, setName] = useState('');
+  const [dragging, setDragging]       = useState(false);
+  const [preview, setPreview]         = useState(null);
+  const [file, setFile]               = useState(null);
+  const [category, setCategory]       = useState('casa');
+  const [name, setName]               = useState('');
   const [imgCategory, setImgCategory] = useState('');
-  const [uploading, setUploading] = useState(false);
-  const [message, setMessage] = useState(null);
-  const [gallery, setGallery] = useState([]);
+  const [uploading, setUploading]     = useState(false);
+  const [message, setMessage]         = useState(null);
+  const [gallery, setGallery]         = useState([]);
   const [loadingGallery, setLoadingGallery] = useState(true);
+  const [editingItem, setEditingItem] = useState(null);
   const inputRef = useRef();
 
   useEffect(() => { loadGallery(); }, []);
 
   const validateFile = (f) => {
-    if (!ALLOWED_TYPES.includes(f.type)) {
-      setMessage({ type: 'error', text: 'Formato inválido. Use: WebP, PNG ou JPG.' });
-      return false;
-    }
-    if (f.size > MAX_SIZE_MB * 1024 * 1024) {
-      setMessage({ type: 'error', text: `Arquivo muito grande. Máximo: ${MAX_SIZE_MB}MB.` });
-      return false;
-    }
+    if (!ALLOWED_TYPES.includes(f.type)) { setMessage({ type: 'error', text: 'Formato inválido. Use: WebP, PNG ou JPG.' }); return false; }
+    if (f.size > MAX_SIZE_MB * 1024 * 1024) { setMessage({ type: 'error', text: `Arquivo muito grande. Máximo: ${MAX_SIZE_MB}MB.` }); return false; }
     return true;
   };
 
   const handleFile = (f) => {
     if (!f || !validateFile(f)) return;
-    setFile(f);
-    setPreview(URL.createObjectURL(f));
-    setMessage(null);
+    setFile(f); setPreview(URL.createObjectURL(f)); setMessage(null);
   };
 
   const loadGallery = async () => {
@@ -52,29 +192,14 @@ export default function AdminGallery() {
   };
 
   const handleUpload = async () => {
-    if (!file || !name) {
-      setMessage({ type: 'error', text: 'Preencha o nome e selecione uma imagem.' });
-      return;
-    }
+    if (!file || !name) { setMessage({ type: 'error', text: 'Preencha o nome e selecione uma imagem.' }); return; }
     setUploading(true);
     const ext = file.name.split('.').pop();
     const path = `gallery/${Date.now()}.${ext}`;
-
-    const { error: uploadErr } = await supabase.storage.from('gallery').upload(path, file, {
-      cacheControl: '3600', upsert: false, contentType: file.type,
-    });
-
-    if (uploadErr) {
-      setMessage({ type: 'error', text: 'Erro no upload: ' + uploadErr.message });
-      setUploading(false);
-      return;
-    }
-
+    const { error: uploadErr } = await supabase.storage.from('gallery').upload(path, file, { cacheControl: '3600', upsert: false, contentType: file.type });
+    if (uploadErr) { setMessage({ type: 'error', text: 'Erro no upload: ' + uploadErr.message }); setUploading(false); return; }
     const { data: urlData } = supabase.storage.from('gallery').getPublicUrl(path);
-    await supabase.from('gallery').insert({
-      name, category, img_category: imgCategory, src: urlData.publicUrl, storage_path: path,
-    });
-
+    await supabase.from('gallery').insert({ name, category, img_category: imgCategory, src: urlData.publicUrl, storage_path: path });
     setMessage({ type: 'success', text: 'Imagem publicada com sucesso!' });
     setFile(null); setPreview(null); setName(''); setImgCategory('');
     setUploading(false);
@@ -83,7 +208,6 @@ export default function AdminGallery() {
 
   const handleDelete = async (item) => {
     if (!confirm(`Remover "${item.name}" da vitrine?`)) return;
-    // Fotos locais (seeded) não existem no Supabase Storage — só remove o registro
     if (item.storage_path && !item.storage_path.startsWith('local/')) {
       await supabase.storage.from('gallery').remove([item.storage_path]);
     }
@@ -94,134 +218,150 @@ export default function AdminGallery() {
   const inputClass = "w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-orange-400 focus:ring-1 focus:ring-orange-400/20 transition-colors placeholder:text-gray-400";
 
   return (
-    <div className="space-y-8">
-      <div>
-        <h2 className="text-2xl font-serif text-gray-900 dark:text-white mb-1">Galeria de Produtos</h2>
-        <p className="text-gray-500 dark:text-white/40 text-sm">Faça upload de novas fotos para a vitrine do site.</p>
-      </div>
+    <>
+      {/* Modal de edição */}
+      {editingItem && (
+        <EditModal
+          item={editingItem}
+          onClose={() => setEditingItem(null)}
+          onSaved={loadGallery}
+        />
+      )}
 
-      {/* Upload + Form */}
-      <div className="bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-2xl p-6">
-        <div className="grid md:grid-cols-2 gap-6">
-          {/* Drop zone */}
-          <div>
-            <div
-              onDragOver={e => { e.preventDefault(); setDragging(true); }}
-              onDragLeave={() => setDragging(false)}
-              onDrop={e => { e.preventDefault(); setDragging(false); handleFile(e.dataTransfer.files[0]); }}
-              onClick={() => inputRef.current?.click()}
-              className={`border-2 border-dashed rounded-2xl p-10 text-center cursor-pointer transition-all ${
-                dragging
-                  ? 'border-orange-500 bg-orange-50'
-                  : 'border-gray-200 dark:border-white/10 hover:border-orange-300 hover:bg-orange-50/50 bg-gray-50 dark:bg-white/5'
-              }`}
-            >
-              <input ref={inputRef} type="file" accept=".webp,.png,.jpg,.jpeg" className="hidden" onChange={e => handleFile(e.target.files[0])} />
-              <Upload className="mx-auto mb-3 text-gray-400" size={40} />
-              <p className="text-gray-700 dark:text-white/60 text-sm font-bold">Arraste e solte aqui</p>
-              <p className="text-gray-400 dark:text-white/30 text-xs mt-1">ou <span className="text-orange-500 underline">clique para selecionar</span></p>
-              <p className="text-gray-400 dark:text-white/20 text-xs mt-3 font-mono">WebP · PNG · JPG · Máx {MAX_SIZE_MB}MB</p>
-            </div>
+      <div className="space-y-8">
+        <div>
+          <h2 className="text-2xl font-serif text-gray-900 dark:text-white mb-1">Galeria de Produtos</h2>
+          <p className="text-gray-500 dark:text-white/40 text-sm">Gerencie, edite ou adicione fotos à vitrine do site.</p>
+        </div>
 
-            {preview && (
-              <div className="mt-4 relative rounded-2xl overflow-hidden border border-gray-200">
-                <img src={preview} alt="Preview" className="w-full h-48 object-cover" />
-                <button onClick={() => { setFile(null); setPreview(null); }}
-                  className="absolute top-2 right-2 bg-black/70 text-white p-1.5 rounded-full hover:bg-red-500 transition-colors">
-                  <X size={14} />
-                </button>
-                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-3">
-                  <p className="text-white text-xs font-bold">{file?.name}</p>
-                  <p className="text-white/60 text-xs">{(file?.size / 1024 / 1024).toFixed(2)} MB</p>
+        {/* Upload + Form */}
+        <div className="bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-2xl p-6">
+          <h3 className="text-gray-700 font-bold text-sm uppercase tracking-widest mb-4 flex items-center gap-2">
+            <ImagePlus size={16} className="text-orange-500" /> Nova Foto
+          </h3>
+          <div className="grid md:grid-cols-2 gap-6">
+            {/* Drop zone */}
+            <div>
+              <div
+                onDragOver={e => { e.preventDefault(); setDragging(true); }}
+                onDragLeave={() => setDragging(false)}
+                onDrop={e => { e.preventDefault(); setDragging(false); handleFile(e.dataTransfer.files[0]); }}
+                onClick={() => inputRef.current?.click()}
+                className={`border-2 border-dashed rounded-2xl p-10 text-center cursor-pointer transition-all ${
+                  dragging ? 'border-orange-500 bg-orange-50' : 'border-gray-200 hover:border-orange-300 hover:bg-orange-50/50 bg-gray-50'
+                }`}
+              >
+                <input ref={inputRef} type="file" accept=".webp,.png,.jpg,.jpeg" className="hidden" onChange={e => handleFile(e.target.files[0])} />
+                <Upload className="mx-auto mb-3 text-gray-400" size={36} />
+                <p className="text-gray-700 text-sm font-bold">Arraste e solte aqui</p>
+                <p className="text-gray-400 text-xs mt-1">ou <span className="text-orange-500 underline">clique para selecionar</span></p>
+                <p className="text-gray-400 text-xs mt-3 font-mono">WebP · PNG · JPG · Máx {MAX_SIZE_MB}MB</p>
+              </div>
+              {preview && (
+                <div className="mt-4 relative rounded-2xl overflow-hidden border border-gray-200">
+                  <img src={preview} alt="Preview" className="w-full h-48 object-cover" />
+                  <button onClick={() => { setFile(null); setPreview(null); }} className="absolute top-2 right-2 bg-black/70 text-white p-1.5 rounded-full hover:bg-red-500 transition-colors"><X size={14} /></button>
+                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-3">
+                    <p className="text-white text-xs font-bold">{file?.name}</p>
+                    <p className="text-white/60 text-xs">{(file?.size / 1024 / 1024).toFixed(2)} MB</p>
+                  </div>
                 </div>
+              )}
+            </div>
+
+            {/* Form */}
+            <div className="space-y-4">
+              <div>
+                <label className="text-gray-500 text-xs font-bold uppercase tracking-widest block mb-2">Nome do Produto *</label>
+                <input value={name} onChange={e => setName(e.target.value)} type="text" placeholder="Ex: Vela Votiva Branca" className={inputClass} />
               </div>
-            )}
+              <div>
+                <label className="text-gray-500 text-xs font-bold uppercase tracking-widest block mb-2">Subcategoria</label>
+                <input value={imgCategory} onChange={e => setImgCategory(e.target.value)} type="text" placeholder="Ex: Linha Votiva, Atacado B2B" className={inputClass} />
+              </div>
+              <div>
+                <label className="text-gray-500 text-xs font-bold uppercase tracking-widest block mb-2">Aba da Vitrine</label>
+                <select value={category} onChange={e => setCategory(e.target.value)}
+                  className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-orange-400">
+                  {CATEGORIES.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
+                </select>
+              </div>
+
+              {message && (
+                <div className={`flex items-center gap-2 text-sm rounded-xl px-4 py-3 border ${message.type === 'success' ? 'bg-green-50 border-green-200 text-green-700' : 'bg-red-50 border-red-200 text-red-700'}`}>
+                  {message.type === 'success' ? <CheckCircle size={16} /> : <AlertCircle size={16} />} {message.text}
+                </div>
+              )}
+
+              <button onClick={handleUpload} disabled={uploading || !file}
+                className="w-full bg-orange-500 hover:bg-orange-600 disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed text-white font-bold uppercase tracking-widest text-sm py-4 rounded-xl transition-colors flex items-center justify-center gap-2">
+                <ImagePlus size={16} />
+                {uploading ? 'Enviando...' : 'Publicar na Vitrine'}
+              </button>
+            </div>
           </div>
+        </div>
 
-          {/* Form */}
-          <div className="space-y-4">
-            <div>
-              <label className="text-gray-500 dark:text-white/60 text-xs font-bold uppercase tracking-widest block mb-2">Nome do Produto *</label>
-              <input value={name} onChange={e => setName(e.target.value)} type="text" placeholder="Ex: Vela Votiva Branca" className={inputClass} />
-            </div>
-            <div>
-              <label className="text-gray-500 dark:text-white/60 text-xs font-bold uppercase tracking-widest block mb-2">Subcategoria</label>
-              <input value={imgCategory} onChange={e => setImgCategory(e.target.value)} type="text" placeholder="Ex: Linha Votiva, Atacado B2B" className={inputClass} />
-            </div>
-            <div>
-              <label className="text-gray-500 dark:text-white/60 text-xs font-bold uppercase tracking-widest block mb-2">Aba da Vitrine</label>
-              <select value={category} onChange={e => setCategory(e.target.value)}
-                className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-orange-400">
-                {CATEGORIES.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
-              </select>
-            </div>
-
-            {message && (
-              <div className={`flex items-center gap-2 text-sm rounded-xl px-4 py-3 border ${
-                message.type === 'success'
-                  ? 'bg-green-50 border-green-200 text-green-700'
-                  : 'bg-red-50 border-red-200 text-red-700'
-              }`}>
-                {message.type === 'success' ? <CheckCircle size={16} /> : <AlertCircle size={16} />}
-                {message.text}
-              </div>
-            )}
-
-            <button onClick={handleUpload} disabled={uploading || !file}
-              className="w-full bg-orange-500 hover:bg-orange-600 disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed text-white font-bold uppercase tracking-widest text-sm py-4 rounded-xl transition-colors flex items-center justify-center gap-2">
-              <ImagePlus size={16} />
-              {uploading ? 'Enviando...' : 'Publicar na Vitrine'}
+        {/* Gallery Grid */}
+        <div>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-gray-500 text-xs font-bold uppercase tracking-widest">Fotos Publicadas ({gallery.length})</h3>
+            <button onClick={loadGallery} className="text-gray-400 hover:text-orange-500 transition-colors" title="Recarregar">
+              <RefreshCw size={16} className={loadingGallery ? 'animate-spin' : ''} />
             </button>
           </div>
+
+          {loadingGallery && (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {[1,2,3,4,5,6,7,8].map(i => <div key={i} className="rounded-xl bg-gray-100 animate-pulse h-36" />)}
+            </div>
+          )}
+
+          {!loadingGallery && gallery.length === 0 && (
+            <div className="border-2 border-dashed border-gray-200 rounded-2xl p-10 text-center">
+              <ImagePlus className="mx-auto mb-3 text-gray-300" size={32} />
+              <p className="text-gray-400 text-sm font-medium">Nenhuma foto publicada ainda</p>
+            </div>
+          )}
+
+          {!loadingGallery && gallery.length > 0 && (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {gallery.map(item => (
+                <div key={item.id} className="relative group rounded-xl overflow-hidden border border-gray-200 bg-white shadow-sm">
+                  <img src={item.src} alt={item.name} className="w-full h-32 object-cover" />
+
+                  {/* Hover overlay com botões */}
+                  <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
+                    <button
+                      onClick={() => setEditingItem(item)}
+                      title="Editar"
+                      className="bg-white text-gray-900 p-2.5 rounded-full hover:bg-orange-500 hover:text-white transition-colors shadow-lg"
+                    >
+                      <Pencil size={15} />
+                    </button>
+                    <button
+                      onClick={() => handleDelete(item)}
+                      title="Remover"
+                      className="bg-white text-gray-900 p-2.5 rounded-full hover:bg-red-500 hover:text-white transition-colors shadow-lg"
+                    >
+                      <Trash2 size={15} />
+                    </button>
+                  </div>
+
+                  {/* Info */}
+                  <div className="p-2.5">
+                    <p className="text-gray-800 text-xs font-bold truncate">{item.name}</p>
+                    <p className="text-gray-400 text-[10px] mt-0.5 capitalize">
+                      {CATEGORIES.find(c => c.id === item.category)?.label || item.category}
+                      {item.img_category && ` · ${item.img_category}`}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
-
-      {/* Gallery Grid */}
-      <div>
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-gray-500 dark:text-white/60 text-xs font-bold uppercase tracking-widest">
-            Fotos Publicadas ({gallery.length})
-          </h3>
-          <button onClick={loadGallery} className="text-gray-400 hover:text-orange-500 transition-colors">
-            <RefreshCw size={16} className={loadingGallery ? 'animate-spin' : ''} />
-          </button>
-        </div>
-
-        {loadingGallery && (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {[1,2,3,4].map(i => (
-              <div key={i} className="rounded-xl bg-gray-100 animate-pulse h-36" />
-            ))}
-          </div>
-        )}
-
-        {!loadingGallery && gallery.length === 0 && (
-          <div className="border-2 border-dashed border-gray-200 rounded-2xl p-10 text-center">
-            <ImagePlus className="mx-auto mb-3 text-gray-300" size={32} />
-            <p className="text-gray-400 text-sm font-medium">Nenhuma foto publicada ainda</p>
-            <p className="text-gray-300 text-xs mt-1">Faça o upload da primeira imagem acima</p>
-          </div>
-        )}
-
-        {!loadingGallery && gallery.length > 0 && (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {gallery.map(item => (
-              <div key={item.id} className="relative group rounded-xl overflow-hidden border border-gray-200 bg-white shadow-sm">
-                <img src={item.src} alt={item.name} className="w-full h-32 object-cover" />
-                <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                  <button onClick={() => handleDelete(item)} className="bg-red-500 p-2 rounded-full text-white hover:bg-red-600 transition-colors">
-                    <Trash2 size={14} />
-                  </button>
-                </div>
-                <div className="p-2.5">
-                  <p className="text-gray-800 text-xs font-bold truncate">{item.name}</p>
-                  <p className="text-gray-400 text-[10px] mt-0.5 capitalize">{CATEGORIES.find(c => c.id === item.category)?.label || item.category}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-    </div>
+    </>
   );
 }
