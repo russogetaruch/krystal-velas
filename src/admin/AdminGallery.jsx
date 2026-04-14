@@ -82,8 +82,11 @@ export default function AdminGallery() {
   };
 
   const handleDelete = async (item) => {
-    if (!confirm(`Remover "${item.name}"?`)) return;
-    await supabase.storage.from('gallery').remove([item.storage_path]);
+    if (!confirm(`Remover "${item.name}" da vitrine?`)) return;
+    // Fotos locais (seeded) não existem no Supabase Storage — só remove o registro
+    if (item.storage_path && !item.storage_path.startsWith('local/')) {
+      await supabase.storage.from('gallery').remove([item.storage_path]);
+    }
     await supabase.from('gallery').delete().eq('id', item.id);
     setGallery(prev => prev.filter(g => g.id !== item.id));
   };
