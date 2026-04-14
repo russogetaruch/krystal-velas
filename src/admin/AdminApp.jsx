@@ -4,19 +4,23 @@ import AdminDashboard from './AdminDashboard';
 import AdminGallery from './AdminGallery';
 import AdminTestimonials from './AdminTestimonials';
 import AdminContent from './AdminContent';
-import { LayoutDashboard, Images, MessageSquare, FileText, LogOut, Menu, X, Sun, Moon, ExternalLink } from 'lucide-react';
+import AdminUsers from './AdminUsers';
+import { LayoutDashboard, Images, MessageSquare, FileText, LogOut, Menu, X, Sun, Moon, ExternalLink, ShieldCheck, UserCog, Lock } from 'lucide-react';
 
 const NAV = [
-  { id: 'dashboard',    label: 'Dashboard',   icon: LayoutDashboard },
-  { id: 'gallery',      label: 'Galeria',     icon: Images },
-  { id: 'testimonials', label: 'Depoimentos', icon: MessageSquare },
-  { id: 'content',      label: 'Conteúdo',    icon: FileText },
+  { id: 'dashboard',    label: 'Dashboard',    icon: LayoutDashboard },
+  { id: 'gallery',      label: 'Galeria',      icon: Images },
+  { id: 'testimonials', label: 'Depoimentos',  icon: MessageSquare },
+  { id: 'content',      label: 'Conteúdo',     icon: FileText },
+  { id: 'users',        label: 'Usuários',     icon: UserCog, superOnly: true },
 ];
 
 export default function AdminApp({ session, onLogout }) {
   const [active, setActive]       = useState('dashboard');
   const [mobileOpen, setMobileOpen] = useState(false);
   const [dark, setDark]           = useState(false);
+  const [profile, setProfile]     = useState(null);
+  const [loading, setLoading]     = useState(true);
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', dark);
@@ -26,6 +30,36 @@ export default function AdminApp({ session, onLogout }) {
     const saved = localStorage.getItem('kv_admin_dark');
     if (saved === 'true') setDark(true);
   }, []);
+
+  useEffect(() => {
+    async function getProfile() {
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', session.user.id)
+          .single();
+
+        if (error) {
+          console.error('Erro ao carregar perfil:', error);
+          // Se não existir perfil, cria um como pendente
+          if (error.code === 'PGRST116') {
+             const { data: newProfile } = await supabase
+               .from('profiles')
+               .insert({ id: session.user.id, email: session.user.email, role: 'pending' })
+               .select()
+               .single();
+             setProfile(newProfile);
+          }
+        } else {
+          setProfile(data);
+        }
+      } finally {
+        setLoading(false);
+      }
+    }
+    getProfile();
+  }, [session]);
 
   const toggleDark = () => {
     const next = !dark;
@@ -43,29 +77,65 @@ export default function AdminApp({ session, onLogout }) {
     setMobileOpen(false);
   };
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-stone dark:bg-[#0f0602] flex flex-col items-center justify-center p-10 text-center transition-colors">
+        <img src="/logo.png" alt="Krystal Velas" className="h-14 w-auto mb-6 dark:brightness-0 dark:invert opacity-20 animate-pulse" />
+        <p className="text-gray-400 dark:text-white/20 text-xs tracking-widest uppercase animate-pulse">Autenticando Permissões...</p>
+      </div>
+    );
+  }
+
+  const isSuper = profile?.role === 'super_admin';
+  const isAdmin = profile?.role === 'admin' || isSuper;
+
+  // Tela de bloqueio se não for admin
+  if (!isAdmin) {
+    return (
+      <div className="min-h-screen bg-stone flex items-center justify-center px-4">
+        <div className="max-w-md w-full bg-white rounded-3xl p-8 border border-gray-200 shadow-2xl text-center">
+          <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-6">
+            <Lock size={32} />
+          </div>
+          <h1 className="text-2xl font-serif text-brown mb-4">Acesso Restrito</h1>
+          <p className="text-gray-500 text-sm leading-relaxed mb-8">
+            Sua conta (<span className="font-bold text-brown">{session.user.email}</span>) está cadastrada, mas ainda não possui permissões administrativas.
+          </p>
+          <div className="bg-orange-50 border border-orange-100 rounded-xl p-4 text-orange-700 text-xs mb-8">
+            Solicite ao seu supervisor para liberar seu acesso no menu <strong>Administradores</strong>.
+          </div>
+          <button onClick={handleLogout} className="w-full bg-brown text-white py-3 rounded-xl font-bold uppercase tracking-widest text-xs hover:bg-wine transition-colors">
+            Sair e Tentar Outra Conta
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const filteredNav = NAV.filter(item => !item.superOnly || isSuper);
+
   const renderPage = () => {
     switch (active) {
       case 'dashboard':    return <AdminDashboard onNavigate={navigate} />;
       case 'gallery':      return <AdminGallery />;
       case 'testimonials': return <AdminTestimonials />;
       case 'content':      return <AdminContent />;
+      case 'users':        return <AdminUsers currentUser={profile} />;
       default:             return <AdminDashboard onNavigate={navigate} />;
     }
   };
 
   const SidebarContent = () => (
     <>
-      {/* Logo */}
       <div className="mb-10">
         <img src="/logo.png" alt="Krystal Velas" className="h-12 w-auto dark:brightness-0 dark:invert transition-all duration-300" />
         <p className="text-gray-400 dark:text-white/25 text-[9px] tracking-[0.35em] uppercase font-bold mt-2 pl-0.5">
-          Painel Admin
+          Painel Admin {isSuper && <span className="text-orange-500 ml-1">· Super</span>}
         </p>
       </div>
 
-      {/* Nav */}
       <nav className="flex-1 space-y-1">
-        {NAV.map(item => {
+        {filteredNav.map(item => {
           const Icon = item.icon;
           const isActive = active === item.id;
           return (
@@ -83,7 +153,6 @@ export default function AdminApp({ session, onLogout }) {
         })}
       </nav>
 
-      {/* Footer sidebar */}
       <div className="border-t border-gray-200 dark:border-white/5 pt-4 mt-4 space-y-1">
         <a href="https://krystalvelas.vittalix.com.br" target="_blank" rel="noopener noreferrer"
           className="w-full flex items-center gap-2 text-gray-400 dark:text-white/30 hover:text-orange-500 dark:hover:text-orange-400 text-xs font-bold uppercase tracking-widest py-2 px-3 rounded-xl hover:bg-orange-50 dark:hover:bg-orange-500/10 transition-colors">
@@ -94,7 +163,10 @@ export default function AdminApp({ session, onLogout }) {
           {dark ? <Sun size={14} /> : <Moon size={14} />}
           {dark ? 'Modo Claro' : 'Modo Escuro'}
         </button>
-        <p className="text-gray-400 dark:text-white/30 text-xs truncate px-1 py-1">{session?.user?.email}</p>
+        <div className="px-3 py-2 flex items-center gap-2 text-gray-400 dark:text-white/20 select-none">
+          <ShieldCheck size={12} className={isSuper ? 'text-orange-500' : 'text-green-500'} />
+          <span className="text-[10px] font-bold uppercase tracking-tighter truncate">{session?.user?.email}</span>
+        </div>
         <button onClick={handleLogout}
           className="w-full flex items-center gap-2 text-gray-400 dark:text-white/40 hover:text-red-500 dark:hover:text-red-400 text-xs font-bold uppercase tracking-widest py-2 px-3 rounded-xl hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors">
           <LogOut size={14} /> Sair
@@ -105,13 +177,10 @@ export default function AdminApp({ session, onLogout }) {
 
   return (
     <div className="min-h-screen bg-[#f7f5f2] dark:bg-[#0f0602] flex transition-colors duration-300">
-
-      {/* ── Sidebar Desktop ── */}
       <aside className="hidden md:flex flex-col w-56 bg-white dark:bg-[#1a0a05] border-r border-gray-200 dark:border-white/5 p-6 transition-colors duration-300 shrink-0">
         <SidebarContent />
       </aside>
 
-      {/* ── Mobile Header ── */}
       <div className="md:hidden fixed top-0 left-0 right-0 bg-white dark:bg-[#1a0a05] border-b border-gray-200 dark:border-white/5 z-50 px-4 py-3 flex items-center justify-between transition-colors duration-300">
         <img src="/logo.png" alt="Krystal Velas" className="h-8 w-auto dark:brightness-0 dark:invert transition-all duration-300" />
         <div className="flex items-center gap-2">
@@ -124,20 +193,19 @@ export default function AdminApp({ session, onLogout }) {
         </div>
       </div>
 
-      {/* ── Mobile Nav Drawer ── */}
       {mobileOpen && (
         <div className="md:hidden fixed inset-0 bg-white dark:bg-[#1a0a05] z-40 pt-16 px-6 flex flex-col transition-colors overflow-y-auto">
           <SidebarContent />
         </div>
       )}
 
-      {/* ── Main Content ── */}
       <main className="flex-1 md:p-10 p-4 pt-20 md:pt-10 overflow-auto min-w-0">
-        {/* Breadcrumb */}
         <div className="flex items-center gap-2 text-gray-400 dark:text-white/30 text-xs mb-8 uppercase tracking-widest">
           <span>Admin</span>
           <span>/</span>
-          <span className="text-orange-500 dark:text-orange-400">{NAV.find(n => n.id === active)?.label}</span>
+          <span className="text-orange-500 dark:text-orange-400">
+            {active === 'users' ? 'Usuários' : NAV.find(n => n.id === active)?.label}
+          </span>
         </div>
 
         {renderPage()}
