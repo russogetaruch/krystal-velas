@@ -37,15 +37,18 @@ export default function AdminContent() {
     const raw = values[key] || '';
     const clean = DOMPurify.sanitize(raw.trim(), { ALLOWED_TAGS: [] });
     setSaving(key);
-    const { error } = await supabase
-      .from('site_content')
-      .upsert({ key, value: clean, updated_at: new Date().toISOString() }, { onConflict: 'key' });
-    setSaving(null);
-    setMessages(prev => ({ ...prev, [key]: error
-      ? { type: 'error', text: 'Erro ao salvar.' }
-      : { type: 'success', text: 'Salvo com sucesso!' }
-    }));
-    setTimeout(() => setMessages(prev => ({ ...prev, [key]: null })), 3000);
+    try {
+      const { error } = await supabase
+        .from('site_content')
+        .upsert({ key, value: clean, updated_at: new Date().toISOString() }, { onConflict: 'key' });
+      if (error) throw new Error(error.message);
+      setMessages(prev => ({ ...prev, [key]: { type: 'success', text: 'Salvo com sucesso!' } }));
+    } catch (err) {
+      setMessages(prev => ({ ...prev, [key]: { type: 'error', text: 'Erro: ' + err.message } }));
+    } finally {
+      setSaving(null);
+      setTimeout(() => setMessages(prev => ({ ...prev, [key]: null })), 3000);
+    }
   };
 
   const inputClass = "w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-orange-400 focus:ring-1 focus:ring-orange-400/20 transition-colors placeholder:text-gray-400";

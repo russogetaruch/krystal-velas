@@ -43,22 +43,24 @@ export default function AdminTestimonials() {
       return;
     }
     setSaving(true);
-    const { error } = await supabase.from('testimonials').insert({
-      author: sanitize(form.author),
-      role: sanitize(form.role),
-      location: sanitize(form.location),
-      quote: sanitize(form.quote),
-      source: form.source,
-      active: true,
-    });
-    setSaving(false);
-    if (error) {
-      setMessage({ type: 'error', text: 'Erro ao salvar: ' + error.message });
-    } else {
+    try {
+      const { error } = await supabase.from('testimonials').insert({
+        author: sanitize(form.author),
+        role: sanitize(form.role),
+        location: sanitize(form.location),
+        quote: sanitize(form.quote),
+        source: form.source,
+        active: true,
+      });
+      if (error) throw new Error(error.message);
       setMessage({ type: 'success', text: 'Depoimento publicado com sucesso!' });
       setForm({ author: '', role: '', location: '', quote: '', source: 'google' });
       setTimeout(() => setMessage(null), 3000);
       load();
+    } catch (err) {
+      setMessage({ type: 'error', text: 'Erro ao salvar: ' + err.message });
+    } finally {
+      setSaving(false);
     }
   };
 

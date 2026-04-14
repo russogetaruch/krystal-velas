@@ -36,39 +36,37 @@ function EditModal({ item, onClose, onSaved }) {
     setSaving(true);
     setError(null);
 
-    let src = item.src;
-    let storagePath = item.storage_path;
+    try {
+      let src = item.src;
+      let storagePath = item.storage_path;
 
-    // Se trocou a imagem → faz upload novo
-    if (newFile) {
-      const ext = newFile.name.split('.').pop();
-      const path = `gallery/${Date.now()}.${ext}`;
-      const { error: upErr } = await supabase.storage
-        .from('gallery').upload(path, newFile, { cacheControl: '3600', upsert: false, contentType: newFile.type });
-      if (upErr) { setError('Erro no upload: ' + upErr.message); setSaving(false); return; }
+      if (newFile) {
+        const ext = newFile.name.split('.').pop();
+        const path = `gallery/${Date.now()}.${ext}`;
+        const { error: upErr } = await supabase.storage
+          .from('gallery').upload(path, newFile, { cacheControl: '3600', upsert: false, contentType: newFile.type });
+        if (upErr) throw new Error('Erro no upload: ' + upErr.message);
 
-      // Remove imagem antiga do storage (só se não for local)
-      if (storagePath && !storagePath.startsWith('local/')) {
-        await supabase.storage.from('gallery').remove([storagePath]);
+        if (storagePath && !storagePath.startsWith('local/')) {
+          await supabase.storage.from('gallery').remove([storagePath]);
+        }
+        const { data: urlData } = supabase.storage.from('gallery').getPublicUrl(path);
+        src = urlData.publicUrl;
+        storagePath = path;
       }
 
-      const { data: urlData } = supabase.storage.from('gallery').getPublicUrl(path);
-      src = urlData.publicUrl;
-      storagePath = path;
+      const { error: dbErr } = await supabase.from('gallery').update({
+        name: name.trim(), category, img_category: imgCategory.trim(), src, storage_path: storagePath,
+      }).eq('id', item.id);
+
+      if (dbErr) throw new Error(dbErr.message);
+      onSaved();
+      onClose();
+    } catch (err) {
+      setError('Erro ao salvar: ' + err.message);
+    } finally {
+      setSaving(false);
     }
-
-    const { error: dbErr } = await supabase.from('gallery').update({
-      name: name.trim(),
-      category,
-      img_category: imgCategory.trim(),
-      src,
-      storage_path: storagePath,
-    }).eq('id', item.id);
-
-    setSaving(false);
-    if (dbErr) { setError('Erro ao salvar: ' + dbErr.message); return; }
-    onSaved();
-    onClose();
   };
 
   const inputClass = "w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-orange-400 focus:ring-1 focus:ring-orange-400/20 transition-colors placeholder:text-gray-400";
