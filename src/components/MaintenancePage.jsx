@@ -128,7 +128,7 @@ export default function MaintenancePage({ until }) {
 
         {/* WhatsApp CTA */}
         <a
-          href="https://wa.me/5543998073376?text=Ol%C3%A1!%20Vi%20que%20o%20site%20est%C3%A1%20em%20manuten%C3%A7%C3%A3o.%20Posso%20fazer%20um%20pedido%3F"
+          href={getWhatsAppLink('contact')}
           target="_blank"
           rel="noopener noreferrer"
           className="inline-flex items-center gap-3 bg-green-600/20 hover:bg-green-600/30 border border-green-500/30 text-green-400 font-bold text-sm uppercase tracking-widest px-6 py-3.5 rounded-full transition-all hover:-translate-y-0.5"

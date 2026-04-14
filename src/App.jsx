@@ -1,4 +1,4 @@
-import { useState, useEffect, lazy, Suspense } from 'react';
+import { useState, useEffect, lazy, Suspense, Component } from 'react';
 import { supabase } from './lib/supabase';
 import Navbar from './components/Navbar';
 import Hero from './components/Hero';
@@ -12,6 +12,31 @@ import Footer from './components/Footer';
 import CookieBanner from './components/CookieBanner';
 import MaintenancePage from './components/MaintenancePage';
 import { useContent } from './context/ContentContext';
+
+// Error Boundary Simple
+class ErrorBoundary extends Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+  static getDerivedStateFromError(error) { return { hasError: true, error }; }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="min-h-screen bg-white flex flex-col items-center justify-center p-10 text-center">
+          <h1 className="text-2xl font-bold text-red-600 mb-4">Ops! Algo deu errado ao carregar o site.</h1>
+          <pre className="p-4 bg-gray-100 rounded-lg text-xs overflow-auto max-w-full">
+            {this.state.error?.toString()}
+          </pre>
+          <button onClick={() => window.location.reload()} className="mt-6 px-6 py-2 bg-brown text-white rounded-full">
+            Tentar novamente
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 // Admin carregado somente quando necessário (lazy)
 const AdminApp   = lazy(() => import('./admin/AdminApp'));
@@ -43,7 +68,7 @@ function AdminRoot() {
 
 // ── Site Público ─────────────────────────────────────────────────────────────
 function PublicSite() {
-  const { content, loading, error } = useContent();
+  const { content, loading } = useContent();
 
   if (loading) {
     return (
@@ -53,13 +78,8 @@ function PublicSite() {
     );
   }
 
-  // Se houver erro crítico no carregamento, mostra o site com os dados padrão (fallback)
-  // Mas se for um erro de renderização, o Error Boundary deve atuar.
-  
-  const isMaintenanceOn = content.maintenance_mode === 'true';
-  const until = content.maintenance_until;
-
-  // Verifica se o tempo de manutenção já passou
+  const isMaintenanceOn = content?.maintenance_mode === 'true';
+  const until = content?.maintenance_until;
   const isStillInMaintenance = isMaintenanceOn && (!until || new Date(until).getTime() > Date.now());
 
   if (isStillInMaintenance) {
@@ -87,12 +107,14 @@ function PublicSite() {
 // ── Root ─────────────────────────────────────────────────────────────────────
 export default function App() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen bg-[#0f0602] flex items-center justify-center">
-        <div className="text-white/30 animate-pulse text-sm">Carregando...</div>
-      </div>
-    }>
-      {isAdminRoute ? <AdminRoot /> : <PublicSite />}
-    </Suspense>
+    <ErrorBoundary>
+      <Suspense fallback={
+        <div className="min-h-screen bg-[#0f0602] flex items-center justify-center">
+          <div className="text-white/30 animate-pulse text-sm">Carregando...</div>
+        </div>
+      }>
+        {isAdminRoute ? <AdminRoot /> : <PublicSite />}
+      </Suspense>
+    </ErrorBoundary>
   );
 }
