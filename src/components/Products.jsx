@@ -163,7 +163,7 @@ export default function Products() {
                 Lojistas, paróquias organizadas e empresas de eventos têm acesso direto à nossa tabela de faturamento fabril.
               </p>
               <a
-                href="https://wa.me/5543998073376?text=Ol%C3%A1%2C%20queria%20acesso%20a%20tabela%20de%20Atacado%20para%20Lojista/Eventos."
+                href={getWhatsAppLink('atacado')}
                 target="_blank" rel="noopener noreferrer"
                 className="relative z-10 bg-orange-500 hover:bg-orange-600 text-white font-bold uppercase tracking-widest text-sm py-4 px-12 rounded-full transition-all inline-block shadow-xl shadow-orange-500/20 hover:-translate-y-1"
               >

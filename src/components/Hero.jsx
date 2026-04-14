@@ -1,6 +1,9 @@
 import { motion } from 'framer-motion';
+import { useSiteContent } from '../hooks/useSiteContent';
 
 export default function Hero() {
+  const { content, getWhatsAppLink } = useSiteContent();
+
   return (
     <section id="hero" className="relative min-h-screen flex items-center justify-center pt-20 overflow-hidden bg-stone pb-0">
       {/* Background com prioridade máxima de carregamento */}
@@ -34,7 +37,7 @@ export default function Hero() {
             transition={{ delay: 0.2, duration: 0.7 }}
             className="font-serif text-5xl md:text-7xl text-wine mb-4 tracking-tight"
           >
-            A luz que <span className="text-gold italic font-light">&nbsp;nos conduz</span>
+            {content.hero_slogan}
           </motion.h1>
           <motion.p
             initial={{ opacity: 0 }}
@@ -42,7 +45,7 @@ export default function Hero() {
             transition={{ delay: 0.35, duration: 0.7 }}
             className="uppercase tracking-[0.3em] text-xs font-bold text-brown/60"
           >
-            Da Fé ao Conforto do Lar
+            {content.hero_subtitle}
           </motion.p>
         </div>
 
@@ -55,7 +58,7 @@ export default function Hero() {
         >
           <div className="absolute -left-6 top-0 text-6xl text-gold/30 font-serif leading-none">"</div>
           <p className="text-xl md:text-2xl text-brown/90 font-light text-center leading-relaxed font-sans px-8">
-            De Ibiporã para todos os seus momentos. Seja para um instante de oração ou para iluminar um jantar especial, a <strong className="font-semibold text-wine">Krystal Velas</strong> entrega a pureza que você exige.
+            {content.hero_description}
           </p>
           <div className="absolute -right-2 -bottom-8 text-6xl text-gold/30 font-serif leading-none rotate-180">"</div>
         </motion.div>
@@ -67,7 +70,12 @@ export default function Hero() {
           transition={{ delay: 0.65, duration: 0.6 }}
           className="flex flex-col sm:flex-row gap-5 justify-center w-full sm:w-auto"
         >
-          <a href="https://wa.me/5543998073376?text=Ol%C3%A1%2C%20queria%20conhecer%20as%20linhas%20de%20velas%20da%20Krystal!" target="_blank" rel="noreferrer" className="bg-orange-500 hover:bg-orange-600 text-white font-bold uppercase tracking-widest text-sm py-4 px-10 rounded-full shadow-lg transition-colors flex justify-center items-center">
+          <a 
+            href={getWhatsAppLink('contact')} 
+            target="_blank" 
+            rel="noreferrer" 
+            className="bg-orange-500 hover:bg-orange-600 text-white font-bold uppercase tracking-widest text-sm py-4 px-10 rounded-full shadow-lg transition-colors flex justify-center items-center"
+          >
             Adquira Nossas Linhas
           </a>
           <a href="#produtos" className="bg-transparent border border-brown/20 text-brown hover:bg-gold/10 font-bold uppercase tracking-widest text-sm py-4 px-10 rounded-full transition-colors flex justify-center items-center">

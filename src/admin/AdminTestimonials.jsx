@@ -23,7 +23,7 @@ export default function AdminTestimonials() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState(null);
-  const [form, setForm] = useState({ author: '', role: '', location: '', quote: '', source: 'google' });
+  const [form, setForm] = useState({ author: '', role: '', location: '', quote: '', source: 'google', avatar_url: '' });
 
   const load = async () => {
     setLoading(true);
@@ -50,11 +50,12 @@ export default function AdminTestimonials() {
         location: sanitize(form.location),
         quote: sanitize(form.quote),
         source: form.source,
+        avatar_url: form.avatar_url.trim() || null,
         active: true,
       });
       if (error) throw new Error(error.message);
       setMessage({ type: 'success', text: 'Depoimento publicado com sucesso!' });
-      setForm({ author: '', role: '', location: '', quote: '', source: 'google' });
+      setForm({ author: '', role: '', location: '', quote: '', source: 'google', avatar_url: '' });
       setTimeout(() => setMessage(null), 3000);
       load();
     } catch (err) {
@@ -90,7 +91,7 @@ export default function AdminTestimonials() {
           <Plus size={16} className="text-orange-500" /> Novo Depoimento
         </h3>
         <form onSubmit={handleAdd} className="space-y-4">
-          <div className="grid md:grid-cols-3 gap-4">
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div>
               <label className="text-gray-500 text-xs font-bold uppercase tracking-widest block mb-1.5">Nome *</label>
               <input value={form.author} onChange={e => setForm({...form, author: e.target.value})} type="text" maxLength={80} placeholder="Maria Silva" className={inputClass} />
@@ -102,6 +103,10 @@ export default function AdminTestimonials() {
             <div>
               <label className="text-gray-500 text-xs font-bold uppercase tracking-widest block mb-1.5">Cidade</label>
               <input value={form.location} onChange={e => setForm({...form, location: e.target.value})} type="text" maxLength={60} placeholder="Londrina - PR" className={inputClass} />
+            </div>
+            <div>
+              <label className="text-gray-500 text-xs font-bold uppercase tracking-widest block mb-1.5">URL da Foto (Avatar)</label>
+              <input value={form.avatar_url} onChange={e => setForm({...form, avatar_url: e.target.value})} type="url" placeholder="https://exemplo.com/foto.jpg" className={inputClass} />
             </div>
           </div>
 

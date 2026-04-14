@@ -1,7 +1,18 @@
 import { motion } from 'framer-motion';
 import { MapPin, Phone, Mail } from 'lucide-react';
+import { useSiteContent } from '../hooks/useSiteContent';
 
 export default function Footer() {
+  const { content, getWhatsAppLink } = useSiteContent();
+
+  const formattedPhone = (num) => {
+    const clean = num.replace(/\D/g, '');
+    if (clean.length === 11) {
+      return `(${clean.slice(2,4)}) ${clean.slice(4,9)}-${clean.slice(9)}`;
+    }
+    return num;
+  };
+
   return (
     <footer id="contato" className="bg-brown pt-24 pb-8 text-white relative overflow-hidden">
       {/* Separador Brilho de Chama - Efeito Elite */}
@@ -48,18 +59,16 @@ export default function Footer() {
               </li>
               <li>
                 <a
-                  href="https://wa.me/5543998073376?text=Ol%C3%A1%2C%20vim%20pelo%20site%20da%20Krystal%20Velas%20e%20gostaria%20de%20falar%20com%20o%20comercial."
+                  href={getWhatsAppLink('contact')}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-3 hover:text-white transition-colors group"
                 >
                   <Phone className="text-gold" size={20} />
-                  {/* Número ofuscado via CSS - bots leem o DOM, não o CSS */}
                   <span
                     className="text-sm font-bold"
-                    data-content="(43) 99807-3376"
                     style={{fontVariantNumeric:'tabular-nums'}}
-                  >(43) 9&#x200B;9807&#x200B;-&#x200B;3376</span>
+                  >{formattedPhone(content.whatsapp_number)}</span>
                 </a>
               </li>
               <li>

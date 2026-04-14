@@ -1,6 +1,9 @@
 import { motion } from 'framer-motion';
+import { useSiteContent } from '../hooks/useSiteContent';
 
 export default function Tradition() {
+  const { content, getWhatsAppLink } = useSiteContent();
+
   return (
     <section id="fabrica" className="py-24 bg-cream relative overflow-hidden">
       {/* Decorative Glow */}
@@ -21,11 +24,11 @@ export default function Tradition() {
             </div>
             
             <h2 className="font-serif text-4xl md:text-5xl text-wine mb-8 leading-tight drop-shadow-sm">
-              Estrutura Fabril em <br />Ibiporã, Paraná
+              {content.fabrica_title}
             </h2>
             
             <p className="text-lg text-brown/80 mb-6 font-light leading-relaxed">
-              Com maquinário focado em alta produção, a <strong className="font-bold text-wine">Krystal Velas</strong> atende demandas em grande escala para varejistas, atacadistas e distribuidores. Garantimos padronização de qualidade e suprimento constante para o seu estoque.
+              {content.fabrica_description}
             </p>
             
             <blockquote className="border-l-4 border-gold pl-6 py-2 my-8">
@@ -45,7 +48,12 @@ export default function Tradition() {
               </div>
             </div>
 
-            <a href="https://wa.me/5543999999999?text=Olá!%20Estou%20no%20site%20da%20Krystal%20Velas%20e%20gostaria%20de%20falar%20com%20um%20Consultor%20Comercial." target="_blank" rel="noopener noreferrer" className="inline-block px-8 py-4 bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-full transition-all hover:scale-105 shadow-xl shadow-orange-500/20 uppercase tracking-widest text-sm">
+            <a 
+              href={getWhatsAppLink('contact')} 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className="inline-block px-8 py-4 bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-full transition-all hover:scale-105 shadow-xl shadow-orange-500/20 uppercase tracking-widest text-sm"
+            >
               Falar com um Consultor
             </a>
 

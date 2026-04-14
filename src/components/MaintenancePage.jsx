@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
+import { useSiteContent } from '../hooks/useSiteContent';
 
 export default function MaintenancePage({ until }) {
   const [timeLeft, setTimeLeft] = useState(null);
   const [progress, setProgress] = useState(0);
+  const { getWhatsAppLink } = useSiteContent();
 
   useEffect(() => {
     if (!until) return;
