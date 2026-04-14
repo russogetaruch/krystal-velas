@@ -5,6 +5,7 @@ import { Upload, X, CheckCircle, AlertCircle, ImagePlus, Trash2, RefreshCw, Penc
 const ALLOWED_TYPES = ['image/webp', 'image/png', 'image/jpeg', 'image/jpg'];
 const MAX_SIZE_MB = 3;
 const CATEGORIES = [
+  { id: 'all',    label: 'Todas' },
   { id: 'casa',   label: 'Para sua Casa' },
   { id: 'evento', label: 'Suas Celebrações' },
   { id: 'fe',     label: 'Para sua Fé' },
@@ -169,6 +170,7 @@ export default function AdminGallery() {
   const [gallery, setGallery]         = useState([]);
   const [loadingGallery, setLoadingGallery] = useState(true);
   const [editingItem, setEditingItem] = useState(null);
+  const [filterCat, setFilterCat] = useState('all');
   const inputRef = useRef();
 
   useEffect(() => { loadGallery(); }, []);
@@ -304,11 +306,27 @@ export default function AdminGallery() {
 
         {/* Gallery Grid */}
         <div>
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-gray-500 text-xs font-bold uppercase tracking-widest">Fotos Publicadas ({gallery.length})</h3>
-            <button onClick={loadGallery} className="text-gray-400 hover:text-orange-500 transition-colors" title="Recarregar">
-              <RefreshCw size={16} className={loadingGallery ? 'animate-spin' : ''} />
-            </button>
+          <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
+            <div className="flex items-center gap-2 flex-wrap">
+              {CATEGORIES.map(c => (
+                <button key={c.id} onClick={() => setFilterCat(c.id)}
+                  className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all ${
+                    filterCat === c.id
+                      ? 'bg-orange-500 text-white'
+                      : 'bg-gray-100 dark:bg-white/5 text-gray-500 dark:text-white/40 hover:bg-orange-50 dark:hover:bg-orange-500/10 hover:text-orange-600'
+                  }`}>
+                  {c.label}
+                </button>
+              ))}
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-gray-400 dark:text-white/30 text-xs">
+                {filterCat === 'all' ? gallery.length : gallery.filter(g => g.category === filterCat).length} foto(s)
+              </span>
+              <button onClick={loadGallery} className="text-gray-400 hover:text-orange-500 transition-colors" title="Recarregar">
+                <RefreshCw size={16} className={loadingGallery ? 'animate-spin' : ''} />
+              </button>
+            </div>
           </div>
 
           {loadingGallery && (
@@ -326,7 +344,7 @@ export default function AdminGallery() {
 
           {!loadingGallery && gallery.length > 0 && (
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {gallery.map(item => (
+              {gallery.filter(g => filterCat === 'all' || g.category === filterCat).map(item => (
                 <div key={item.id} className="relative group rounded-xl overflow-hidden border border-gray-200 bg-white shadow-sm">
                   <img src={item.src} alt={item.name} className="w-full h-32 object-cover" />
 
