@@ -5,13 +5,15 @@ import AdminGallery from './AdminGallery';
 import AdminTestimonials from './AdminTestimonials';
 import AdminContent from './AdminContent';
 import AdminUsers from './AdminUsers';
-import { LayoutDashboard, Images, MessageSquare, FileText, LogOut, Menu, X, Sun, Moon, ExternalLink, ShieldCheck, UserCog, Lock } from 'lucide-react';
+import AdminLogs from './AdminLogs';
+import { LayoutDashboard, Images, MessageSquare, FileText, LogOut, Menu, X, Sun, Moon, ExternalLink, Shield, UserCog, Lock, Activity } from 'lucide-react';
 
 const NAV = [
   { id: 'dashboard',    label: 'Dashboard',    icon: LayoutDashboard },
   { id: 'gallery',      label: 'Galeria',      icon: Images },
   { id: 'testimonials', label: 'Depoimentos',  icon: MessageSquare },
   { id: 'content',      label: 'Conteúdo',     icon: FileText },
+  { id: 'logs',         label: 'Logs',         icon: Activity, superOnly: true },
   { id: 'users',        label: 'Usuários',     icon: UserCog, superOnly: true },
 ];
 
@@ -121,6 +123,7 @@ export default function AdminApp({ session, onLogout }) {
       case 'testimonials': return <AdminTestimonials />;
       case 'content':      return <AdminContent />;
       case 'users':        return <AdminUsers currentUser={profile} />;
+      case 'logs':         return <AdminLogs />;
       default:             return <AdminDashboard onNavigate={navigate} />;
     }
   };
@@ -164,7 +167,7 @@ export default function AdminApp({ session, onLogout }) {
           {dark ? 'Modo Claro' : 'Modo Escuro'}
         </button>
         <div className="px-3 py-2 flex items-center gap-2 text-gray-400 dark:text-white/20 select-none">
-          <ShieldCheck size={12} className={isSuper ? 'text-orange-500' : 'text-green-500'} />
+          <Shield size={12} className={isSuper ? 'text-orange-500' : 'text-green-500'} />
           <span className="text-[10px] font-bold uppercase tracking-tighter truncate">{session?.user?.email}</span>
         </div>
         <button onClick={handleLogout}

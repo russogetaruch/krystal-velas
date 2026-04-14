@@ -11,6 +11,7 @@ import FAQ from './components/FAQ';
 import Footer from './components/Footer';
 import CookieBanner from './components/CookieBanner';
 import MaintenancePage from './components/MaintenancePage';
+import FloatingWhatsApp from './components/FloatingWhatsApp';
 import { useContent } from './context/ContentContext';
 
 // Error Boundary Simple
@@ -41,12 +42,20 @@ class ErrorBoundary extends Component {
 // Admin carregado somente quando necessário (lazy)
 const AdminApp   = lazy(() => import('./admin/AdminApp'));
 const AdminLogin = lazy(() => import('./admin/AdminLogin'));
+const AdminSetup = lazy(() => import('./admin/AdminSetup'));
 
 const isAdminRoute = window.location.pathname.startsWith('/admin');
 
 // ── Admin ────────────────────────────────────────────────────────────────────
 function AdminRoot() {
   const [session, setSession] = useState(undefined);
+  const [isSetup, setIsSetup] = useState(window.location.hash === '#/setup');
+
+  useEffect(() => {
+    const handleHash = () => setIsSetup(window.location.hash === '#/setup');
+    window.addEventListener('hashchange', handleHash);
+    return () => window.removeEventListener('hashchange', handleHash);
+  }, []);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setSession(data.session));
@@ -62,7 +71,9 @@ function AdminRoot() {
     );
   }
 
+  if (isSetup && !session) return <AdminSetup onBack={() => window.location.hash = ''} />;
   if (!session) return <AdminLogin onLogin={setSession} />;
+  
   return <AdminApp session={session} onLogout={() => setSession(null)} />;
 }
 
@@ -100,6 +111,7 @@ function PublicSite() {
       </main>
       <Footer />
       <CookieBanner />
+      <FloatingWhatsApp />
     </div>
   );
 }

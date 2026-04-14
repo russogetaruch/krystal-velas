@@ -35,7 +35,18 @@ export default function AdminContent() {
 
   const handleSave = async (key) => {
     const raw = values[key] || '';
-    const clean = DOMPurify.sanitize(raw.trim(), { ALLOWED_TAGS: [] });
+    let clean = DOMPurify.sanitize(raw.trim(), { ALLOWED_TAGS: [] });
+
+    // Validação específica para WhatsApp
+    if (key === 'whatsapp_number') {
+      clean = clean.replace(/\D/g, ''); // Remove tudo que não for dígito
+      if (clean.length < 10) {
+        setMessages(prev => ({ ...prev, [key]: { type: 'error', text: 'Número inválido (mínimo 10 dígitos com DDD)' } }));
+        setTimeout(() => setMessages(prev => ({ ...prev, [key]: null })), 3000);
+        return;
+      }
+    }
+
     setSaving(key);
     try {
       const { error } = await supabase

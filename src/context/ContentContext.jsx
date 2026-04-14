@@ -24,9 +24,11 @@ export function ContentProvider({ children }) {
   const fetchContent = useCallback(async () => {
     try {
       setLoading(true);
+      const publicKeys = Object.keys(DEFAULT_CONTENT);
       const { data, error: sbError } = await supabase
         .from('site_content')
-        .select('key, value');
+        .select('key, value')
+        .in('key', publicKeys);
 
       if (sbError) throw sbError;
 

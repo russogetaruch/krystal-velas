@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { Upload, X, CheckCircle, AlertCircle, ImagePlus, Trash2, RefreshCw, Pencil, Save } from 'lucide-react';
+import DOMPurify from 'dompurify';
 
 const ALLOWED_TYPES = ['image/webp', 'image/png', 'image/jpeg', 'image/jpg'];
 const MAX_SIZE_MB = 3;
@@ -21,6 +22,8 @@ function EditModal({ item, onClose, onSaved }) {
   const [saving, setSaving]       = useState(false);
   const [error, setError]         = useState(null);
   const inputRef = useRef();
+
+  const sanitize = (str) => DOMPurify.sanitize(str.trim(), { ALLOWED_TAGS: [] });
 
   const handleFile = (f) => {
     if (!f) return;
@@ -56,7 +59,7 @@ function EditModal({ item, onClose, onSaved }) {
       }
 
       const { error: dbErr } = await supabase.from('gallery').update({
-        name: name.trim(), category, img_category: imgCategory.trim(), src, storage_path: storagePath,
+        name: sanitize(name), category, img_category: sanitize(imgCategory), src, storage_path: storagePath,
       }).eq('id', item.id);
 
       if (dbErr) throw new Error(dbErr.message);
@@ -90,51 +93,64 @@ function EditModal({ item, onClose, onSaved }) {
         </div>
 
         {/* Body */}
-        <div className="p-6 space-y-5">
-          {/* Preview / Troca de imagem */}
+        <div className="p-6 space-y-6">
+          {/* Live Preview Card */}
+          <div>
+            <label className="text-gray-400 text-[10px] font-bold uppercase tracking-[0.2em] block mb-3">Prévia em Tempo Real</label>
+            <div className="bg-gray-50 dark:bg-white/5 border border-gray-100 dark:border-white/10 rounded-2xl p-4 flex items-center justify-center">
+              <div className="w-48 group relative rounded-[1.5rem] overflow-hidden aspect-[4/5] shadow-xl bg-white border border-wine/5">
+                <img src={preview} alt="Preview" className="w-full h-full object-cover" />
+                <div className="absolute inset-0 z-10 bg-gradient-to-t from-[#0f0602]/90 via-transparent to-transparent flex flex-col justify-end p-4">
+                  <p className="text-gold text-[8px] uppercase font-bold tracking-[0.2em] mb-1">{imgCategory || 'Categoria'}</p>
+                  <h3 className="text-white font-serif text-xs leading-tight">{name || 'Nome do Produto'}</h3>
+                  <div className="h-0.5 bg-orange-500 w-8 mt-2 rounded-full" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-4">
+            {/* Nome */}
+            <div className="md:col-span-2">
+              <label className="text-gray-500 text-[10px] font-bold uppercase tracking-widest block mb-1.5">Nome do Produto *</label>
+              <input value={name} onChange={e => { setName(e.target.value); setError(null); }} type="text" maxLength={100} placeholder="Ex: Vela Votiva Branca 298g" className={inputClass} />
+            </div>
+
+            {/* Subcategoria */}
+            <div>
+              <label className="text-gray-500 text-[10px] font-bold uppercase tracking-widest block mb-1.5">Linha / Detalhe</label>
+              <input value={imgCategory} onChange={e => setImgCategory(e.target.value)} type="text" maxLength={60} placeholder="Ex: Linha Votiva" className={inputClass} />
+            </div>
+
+            {/* Aba */}
+            <div>
+              <label className="text-gray-500 text-[10px] font-bold uppercase tracking-widest block mb-1.5">Aba da Vitrine</label>
+              <select value={category} onChange={e => setCategory(e.target.value)}
+                className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-orange-400">
+                {CATEGORIES.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
+              </select>
+            </div>
+          </div>
+
+          {/* Troca de imagem */}
           <div
             onClick={() => inputRef.current?.click()}
-            className="relative rounded-2xl overflow-hidden cursor-pointer group border-2 border-dashed border-gray-200 hover:border-orange-400 transition-colors"
+            className="flex items-center gap-4 p-4 rounded-xl border-2 border-dashed border-gray-100 hover:border-orange-400/50 hover:bg-orange-50/10 cursor-pointer transition-all"
           >
-            <img src={preview} alt={name} className="w-full h-48 object-cover" />
-            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2">
-              <Upload size={28} className="text-white" />
-              <p className="text-white text-sm font-bold">Clique para trocar a imagem</p>
-              <p className="text-white/70 text-xs">WebP · PNG · JPG · Máx {MAX_SIZE_MB}MB</p>
+            <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center text-gray-400">
+              <Upload size={20} />
+            </div>
+            <div>
+              <p className="text-xs font-bold text-gray-700">Substituir Imagem</p>
+              <p className="text-[10px] text-gray-400">Clique para selecionar novo arquivo</p>
             </div>
             <input ref={inputRef} type="file" accept=".webp,.png,.jpg,.jpeg" className="hidden" onChange={e => handleFile(e.target.files[0])} />
-            {newFile && (
-              <div className="absolute top-2 right-2 bg-orange-500 text-white text-[10px] font-bold px-2 py-1 rounded-full">
-                Nova imagem
-              </div>
-            )}
-          </div>
-
-          {/* Nome */}
-          <div>
-            <label className="text-gray-500 text-xs font-bold uppercase tracking-widest block mb-2">Nome do Produto *</label>
-            <input value={name} onChange={e => { setName(e.target.value); setError(null); }} type="text" maxLength={100} placeholder="Ex: Vela Votiva Branca 298g" className={inputClass} />
-          </div>
-
-          {/* Subcategoria */}
-          <div>
-            <label className="text-gray-500 text-xs font-bold uppercase tracking-widest block mb-2">Subcategoria / Linha</label>
-            <input value={imgCategory} onChange={e => setImgCategory(e.target.value)} type="text" maxLength={60} placeholder="Ex: Linha Votiva, Atacado B2B" className={inputClass} />
-          </div>
-
-          {/* Aba */}
-          <div>
-            <label className="text-gray-500 text-xs font-bold uppercase tracking-widest block mb-2">Aba da Vitrine</label>
-            <select value={category} onChange={e => setCategory(e.target.value)}
-              className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-orange-400">
-              {CATEGORIES.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
-            </select>
           </div>
 
           {/* Erro */}
           {error && (
-            <div className="flex items-center gap-2 text-sm rounded-xl px-4 py-3 bg-red-50 border border-red-200 text-red-700">
-              <AlertCircle size={16} /> {error}
+            <div className="flex items-center gap-2 text-xs rounded-xl px-4 py-3 bg-red-50 border border-red-200 text-red-700">
+              <AlertCircle size={14} /> {error}
             </div>
           )}
         </div>
@@ -171,6 +187,8 @@ export default function AdminGallery() {
   const [filterCat, setFilterCat] = useState('all');
   const inputRef = useRef();
 
+  const sanitize = (str) => DOMPurify.sanitize(str.trim(), { ALLOWED_TAGS: [] });
+
   useEffect(() => { loadGallery(); }, []);
 
   const validateFile = (f) => {
@@ -199,7 +217,13 @@ export default function AdminGallery() {
     const { error: uploadErr } = await supabase.storage.from('gallery').upload(path, file, { cacheControl: '3600', upsert: false, contentType: file.type });
     if (uploadErr) { setMessage({ type: 'error', text: 'Erro no upload: ' + uploadErr.message }); setUploading(false); return; }
     const { data: urlData } = supabase.storage.from('gallery').getPublicUrl(path);
-    await supabase.from('gallery').insert({ name, category, img_category: imgCategory, src: urlData.publicUrl, storage_path: path });
+    await supabase.from('gallery').insert({ 
+      name: sanitize(name), 
+      category, 
+      img_category: sanitize(imgCategory), 
+      src: urlData.publicUrl, 
+      storage_path: path 
+    });
     setMessage({ type: 'success', text: 'Imagem publicada com sucesso!' });
     setFile(null); setPreview(null); setName(''); setImgCategory('');
     setUploading(false);
@@ -341,36 +365,47 @@ export default function AdminGallery() {
           )}
 
           {!loadingGallery && gallery.length > 0 && (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
               {gallery.filter(g => filterCat === 'all' || g.category === filterCat).map(item => (
-                <div key={item.id} className="relative group rounded-xl overflow-hidden border border-gray-200 bg-white shadow-sm">
-                  <img src={item.src} alt={item.name} className="w-full h-32 object-cover" />
+                <div key={item.id} className="relative group rounded-[2rem] overflow-hidden border border-gray-100 dark:border-white/5 bg-white dark:bg-white/5 shadow-sm hover:shadow-xl transition-all duration-500">
+                  <div className="aspect-[4/5] overflow-hidden">
+                    <img src={item.src} alt={item.name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
+                  </div>
 
                   {/* Hover overlay com botões */}
-                  <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
+                  <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4 z-20">
                     <button
                       onClick={() => setEditingItem(item)}
                       title="Editar"
-                      className="bg-white text-gray-900 p-2.5 rounded-full hover:bg-orange-500 hover:text-white transition-colors shadow-lg"
+                      className="bg-white text-gray-900 p-3 rounded-full hover:bg-orange-500 hover:text-white transition-all transform scale-90 group-hover:scale-100 shadow-xl"
                     >
-                      <Pencil size={15} />
+                      <Pencil size={18} />
                     </button>
                     <button
                       onClick={() => handleDelete(item)}
                       title="Remover"
-                      className="bg-white text-gray-900 p-2.5 rounded-full hover:bg-red-500 hover:text-white transition-colors shadow-lg"
+                      className="bg-white text-gray-900 p-3 rounded-full hover:bg-red-500 hover:text-white transition-all transform scale-90 group-hover:scale-100 shadow-xl"
                     >
-                      <Trash2 size={15} />
+                      <Trash2 size={18} />
                     </button>
                   </div>
 
-                  {/* Info */}
-                  <div className="p-2.5">
-                    <p className="text-gray-800 text-xs font-bold truncate">{item.name}</p>
-                    <p className="text-gray-400 text-[10px] mt-0.5 capitalize">
-                      {CATEGORIES.find(c => c.id === item.category)?.label || item.category}
-                      {item.img_category && ` · ${item.img_category}`}
-                    </p>
+                  {/* Info Panel subtle */}
+                  <div className="p-5 border-t border-gray-50 dark:border-white/5">
+                    <p className="text-gray-900 dark:text-white text-sm font-bold truncate mb-1">{item.name}</p>
+                    <div className="flex items-center gap-2">
+                       <span className="text-[10px] text-orange-500 font-bold uppercase tracking-widest">
+                         {CATEGORIES.find(c => c.id === item.category)?.label || item.category}
+                       </span>
+                       {item.img_category && (
+                         <>
+                           <span className="w-1 h-1 bg-gray-300 rounded-full" />
+                           <span className="text-[10px] text-gray-400 dark:text-white/20 uppercase tracking-widest truncate max-w-[80px]">
+                             {item.img_category}
+                           </span>
+                         </>
+                       )}
+                    </div>
                   </div>
                 </div>
               ))}

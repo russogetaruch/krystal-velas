@@ -124,29 +124,43 @@ export default function Products() {
           {/* Grid */}
           <motion.div
             key={`grid-${activeTab}`}
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }}
-            className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4 lg:gap-6 mx-auto"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5 }}
+            className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-8 mx-auto"
           >
             {filteredProducts.map((product, i) => (
               <motion.div
                 key={product.id}
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.4, delay: i * 0.08 }}
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: i * 0.05 }}
                 onClick={() => { setCurrentIndex(i); setLightboxOpen(true); }}
-                className="group relative rounded-xl overflow-hidden aspect-square cursor-pointer shadow-sm hover:shadow-2xl hover:scale-[1.02] transition-all bg-white border border-wine/5"
+                className="group relative rounded-[2rem] overflow-hidden aspect-[4/5] cursor-pointer shadow-sm hover:shadow-[0_40px_80px_-20px_rgba(45,20,7,0.15)] transition-all duration-500 bg-white border border-wine/5"
               >
-                <img
-                  src={product.src}
-                  alt={product.name}
-                  loading="lazy"
-                  decoding="async"
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent flex items-end p-4 md:p-6 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <div>
-                    <p className="text-gold text-[9px] md:text-xs uppercase font-bold tracking-wider">{product.imgCategory}</p>
-                    <h3 className="text-white font-serif text-sm md:text-lg leading-tight mt-1">{product.name}</h3>
+                <div className="absolute inset-0 z-0 overflow-hidden">
+                  <img
+                    src={product.src}
+                    alt={product.name}
+                    loading="lazy"
+                    decoding="async"
+                    className="w-full h-full object-cover scale-100 group-hover:scale-110 transition-transform duration-1000 ease-out"
+                  />
+                </div>
+                
+                {/* Overlay more elegant */}
+                <div className="absolute inset-0 z-10 bg-gradient-to-t from-[#0f0602]/90 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-all duration-500 flex flex-col justify-end p-6 md:p-8 translate-y-4 group-hover:translate-y-0">
+                  <p className="text-gold text-[10px] uppercase font-bold tracking-[0.2em] mb-2">{product.imgCategory}</p>
+                  <h3 className="text-white font-serif text-lg md:text-xl leading-tight">{product.name}</h3>
+                  <div className="h-0.5 bg-orange-500 w-0 group-hover:w-12 transition-all duration-500 mt-4 rounded-full" />
+                </div>
+
+                {/* Status indicator simple */}
+                <div className="absolute top-4 right-4 z-20 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="bg-white/90 backdrop-blur-md p-2 rounded-full shadow-lg">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-3 h-3 text-brown">
+                      <path d="M12 5v14M5 12h14" />
+                    </svg>
                   </div>
                 </div>
               </motion.div>

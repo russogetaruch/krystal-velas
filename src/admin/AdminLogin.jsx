@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { Lock, Mail, AlertTriangle, WifiOff, ShieldOff, Clock } from 'lucide-react';
+import { logSecurityEvent } from '../lib/security';
 
 const MAX_ATTEMPTS = 5;
 const LOCKOUT_SECONDS = 60;
@@ -88,6 +89,7 @@ export default function AdminLogin({ onLogin }) {
 
   const handleLogin = async (e) => {
     e.preventDefault();
+    const cleanEmail = email.trim().toLowerCase();
     if (isLocked || loading) return;
 
     setLoading(true);
@@ -95,7 +97,7 @@ export default function AdminLogin({ onLogin }) {
 
     try {
       const { data, error: err } = await supabase.auth.signInWithPassword({
-        email: email.trim().toLowerCase(),
+        email: cleanEmail,
         password,
       });
 
@@ -103,10 +105,16 @@ export default function AdminLogin({ onLogin }) {
         const newAttempts = attempts + 1;
         setAttempts(newAttempts);
 
-        // Bloqueia após MAX_ATTEMPTS tentativas locais
+        await logSecurityEvent('LOGIN_FAILURE', cleanEmail, { 
+          attempts: newAttempts, 
+          error: err.message 
+        }, newAttempts >= 3 ? 'WARNING' : 'INFO');
+
+        // Bloqueia após MAX_ATTEMPTS
         if (newAttempts >= MAX_ATTEMPTS) {
           const until = Date.now() + LOCKOUT_SECONDS * 1000;
           setLockedUntil(until);
+          await logSecurityEvent('BRUTE_FORCE_ALERT', cleanEmail, { lockout: LOCKOUT_SECONDS }, 'CRITICAL');
           setError({
             icon: Clock,
             color: 'text-yellow-600 bg-yellow-50 border-yellow-200',
@@ -117,7 +125,7 @@ export default function AdminLogin({ onLogin }) {
           setError(parseAuthError(err));
         }
       } else if (data?.session) {
-        // Sucesso — sessão persistida automaticamente pelo SDK
+        await logSecurityEvent('LOGIN_SUCCESS', cleanEmail);
         onLogin(data.session);
       }
     } catch (networkErr) {
@@ -223,9 +231,18 @@ export default function AdminLogin({ onLogin }) {
           </button>
         </form>
 
-        <p className="text-center text-gray-400 text-xs mt-6">
-          Supabase Auth · RLS Protegido · LGPD Compliant
-        </p>
+        <div className="mt-8 text-center space-y-4">
+          <button 
+            onClick={() => window.location.href = '#/setup'} 
+            className="text-gray-400 hover:text-orange-500 text-[10px] uppercase font-bold tracking-widest transition-colors"
+          >
+            Primeiro acesso? Clique aqui
+          </button>
+          
+          <p className="text-gray-400 text-[9px] uppercase tracking-[0.2em] opacity-50">
+            Supabase Auth · RLS Protegido · LGPD Compliant
+          </p>
+        </div>
       </div>
     </div>
   );
