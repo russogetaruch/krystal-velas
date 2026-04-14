@@ -11,6 +11,7 @@ import FAQ from './components/FAQ';
 import Footer from './components/Footer';
 import CookieBanner from './components/CookieBanner';
 import MaintenancePage from './components/MaintenancePage';
+import { useContent } from './context/ContentContext';
 
 // Admin carregado somente quando necessário (lazy)
 const AdminApp   = lazy(() => import('./admin/AdminApp'));
@@ -42,33 +43,9 @@ function AdminRoot() {
 
 // ── Site Público ─────────────────────────────────────────────────────────────
 function PublicSite() {
-  const [maintenance, setMaintenance] = useState(null); // null = loading
-  const [maintenanceUntil, setMaintenanceUntil] = useState(null);
+  const { content, loading, error } = useContent();
 
-  useEffect(() => {
-    supabase
-      .from('site_content')
-      .select('key, value')
-      .in('key', ['maintenance_mode', 'maintenance_until'])
-      .then(({ data }) => {
-        const map = {};
-        (data || []).forEach(row => { map[row.key] = row.value; });
-
-        const isOn = map['maintenance_mode'] === 'true';
-        const until = map['maintenance_until'] || null;
-
-        // Se expirou o prazo, não mostra manutenção
-        if (isOn && until && new Date(until).getTime() < Date.now()) {
-          setMaintenance(false);
-        } else {
-          setMaintenance(isOn);
-          setMaintenanceUntil(until);
-        }
-      });
-  }, []);
-
-  // Tela de loading enquanto verifica
-  if (maintenance === null) {
+  if (loading) {
     return (
       <div className="min-h-screen bg-[#0f0602] flex items-center justify-center">
         <img src="/logo.png" alt="Krystal Velas" className="h-14 w-auto brightness-0 invert opacity-30 animate-pulse" />
@@ -76,8 +53,17 @@ function PublicSite() {
     );
   }
 
-  if (maintenance) {
-    return <MaintenancePage until={maintenanceUntil} />;
+  // Se houver erro crítico no carregamento, mostra o site com os dados padrão (fallback)
+  // Mas se for um erro de renderização, o Error Boundary deve atuar.
+  
+  const isMaintenanceOn = content.maintenance_mode === 'true';
+  const until = content.maintenance_until;
+
+  // Verifica se o tempo de manutenção já passou
+  const isStillInMaintenance = isMaintenanceOn && (!until || new Date(until).getTime() > Date.now());
+
+  if (isStillInMaintenance) {
+    return <MaintenancePage until={until} />;
   }
 
   return (
