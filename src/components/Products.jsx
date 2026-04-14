@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { useSiteContent } from '../hooks/useSiteContent';
 
 // Fallback local — usado se o Supabase estiver offline
 const FALLBACK_PRODUCTS = [
@@ -35,6 +36,7 @@ export default function Products() {
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [products, setProducts] = useState(FALLBACK_PRODUCTS);
+  const { getWhatsAppLink } = useSiteContent();
 
   // Busca do Supabase, usa fallback se vazio/erro
   useEffect(() => {
