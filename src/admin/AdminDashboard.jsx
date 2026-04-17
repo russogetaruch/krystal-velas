@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '../lib/supabase';
-import { Images, MessageSquare, FileText, ExternalLink, TrendingUp, CheckCircle, AlertTriangle, Wrench, Clock, X, ShoppingCart, ShoppingBag, Package } from 'lucide-react';
+import { Images, MessageSquare, FileText, ExternalLink, TrendingUp, CheckCircle, AlertTriangle, Wrench, Clock, X, ShoppingCart, ShoppingBag, Package, DollarSign, TrendingDown, BarChart3 } from 'lucide-react';
 import { logAudit } from './adminUtils';
 
 const DURATION_OPTIONS = [
@@ -38,6 +38,7 @@ function useCountdown(until) {
 export default function AdminDashboard({ onNavigate, session }) {
   const [stats, setStats]       = useState({ gallery: 0, testimonials: 0, activeTestimonials: 0, content: 0 });
   const [salesStats, setSalesStats] = useState({ revenue: 0, totalOrders: 0, pendingOrders: 0, avgTicket: 0 });
+  const [financial, setFinancial] = useState({ cmv: 0, grossProfit: 0, grossMargin: 0 });
   const [topProducts, setTopProducts] = useState([]);
   const [lowStockProducts, setLowStockProducts] = useState([]);
   const [loading, setLoading]   = useState(true);
@@ -58,13 +59,14 @@ export default function AdminDashboard({ onNavigate, session }) {
   useEffect(() => {
     const load = async () => {
       try {
-        const [g, t, c, sc, al, ords] = await Promise.all([
+        const [g, t, c, sc, al, ords, invLogs] = await Promise.all([
           supabase.from('gallery').select('*', { count: 'exact' }).limit(4).order('created_at', { ascending: false }),
           supabase.from('testimonials').select('*', { count: 'exact' }),
           supabase.from('site_content').select('*', { count: 'exact' }),
           supabase.from('site_content').select('key, value').in('key', ['maintenance_mode', 'maintenance_until']),
           supabase.from('audit_logs').select('*').order('created_at', { ascending: false }).limit(3),
           supabase.from('orders').select('*').order('created_at', { ascending: false }),
+          supabase.from('inventory_logs').select('quantity, unit_cost').eq('type', 'saida'),
         ]);
 
         setStats({
@@ -82,6 +84,14 @@ export default function AdminDashboard({ onNavigate, session }) {
           pendingOrders: ordersData.filter(o => o.status === 'pending').length,
           avgTicket: ordersData.length > 0 ? revenue / ordersData.length : 0
         });
+
+        // ── Métricas Financeiras (CMV + Lucro) ─────────────────────
+        const cmv = (invLogs.data || []).reduce(
+          (sum, l) => sum + Math.abs(l.quantity) * (l.unit_cost || 0), 0
+        );
+        const grossProfit = revenue - cmv;
+        const grossMargin = revenue > 0 ? (grossProfit / revenue) * 100 : 0;
+        setFinancial({ cmv, grossProfit, grossMargin });
 
         setRecentGallery(g.data || []);
         setRecentLogs(al.data || []);
@@ -210,7 +220,7 @@ export default function AdminDashboard({ onNavigate, session }) {
         <StatCard icon={Package}       label="Inventário"          value={loading ? '...' : (lowStockProducts.length > 0 ? lowStockProducts.length : '0')} sub={lowStockProducts.length > 0 ? 'em alerta' : 'saudável'} color={lowStockProducts.length > 0 ? 'bg-red-500 animate-pulse' : 'bg-stone'} onClick={() => onNavigate('products')} />
       </div>
 
-      {/* ─── Métricas de Vendas (Vittalix E-commerce) ───────────────── */}
+      {/* ─── Métricas de Vendas ───────────────────────────────────── */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="bg-white dark:bg-white/5 border border-gray-100 dark:border-white/10 rounded-3xl p-6">
           <p className="text-[9px] text-gray-400 font-bold uppercase tracking-widest mb-1">Receita Total</p>
@@ -228,6 +238,73 @@ export default function AdminDashboard({ onNavigate, session }) {
           <p className="text-[9px] text-gray-400 font-bold uppercase tracking-widest mb-1">Ticket Médio</p>
           <p className="text-2xl font-serif text-brown dark:text-white">R$ {(salesStats?.avgTicket || 0).toFixed(2)}</p>
         </div>
+      </div>
+
+      {/* ─── Inteligência Financeira (CMV + Lucro) ───────────────── */}
+      <div className="bg-white dark:bg-white/5 border border-gray-100 dark:border-white/10 rounded-[2.5rem] p-8">
+        <div className="flex items-center gap-3 mb-8">
+          <div className="w-10 h-10 bg-orange-50 dark:bg-orange-500/10 rounded-2xl flex items-center justify-center">
+            <BarChart3 size={18} className="text-orange-500" />
+          </div>
+          <div>
+            <h3 className="font-serif text-xl text-brown dark:text-white">Inteligência Financeira</h3>
+            <p className="text-[10px] text-gray-400 uppercase font-bold tracking-widest">Baseado em movimentações de estoque</p>
+          </div>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* CMV */}
+          <div className="bg-gray-50 dark:bg-white/5 rounded-2xl p-6 border border-gray-100 dark:border-white/5">
+            <div className="flex items-center gap-2 mb-3">
+              <TrendingDown size={14} className="text-red-400" />
+              <p className="text-[9px] text-gray-400 font-bold uppercase tracking-[0.2em]">CMV (Custo da Mercadoria)</p>
+            </div>
+            <p className="text-3xl font-serif text-red-500">R$ {financial.cmv.toFixed(2)}</p>
+            <p className="text-[10px] text-gray-400 mt-2">
+              {salesStats.revenue > 0 ? ((financial.cmv / salesStats.revenue) * 100).toFixed(1) : '0'}% da receita bruta
+            </p>
+          </div>
+          {/* Lucro Bruto */}
+          <div className={`rounded-2xl p-6 border ${
+            financial.grossProfit >= 0
+              ? 'bg-green-50 dark:bg-green-500/10 border-green-100 dark:border-green-500/20'
+              : 'bg-red-50 dark:bg-red-500/10 border-red-100 dark:border-red-500/20'
+          }`}>
+            <div className="flex items-center gap-2 mb-3">
+              <DollarSign size={14} className={financial.grossProfit >= 0 ? 'text-green-500' : 'text-red-500'} />
+              <p className="text-[9px] text-gray-500 dark:text-white/40 font-bold uppercase tracking-[0.2em]">Lucro Bruto</p>
+            </div>
+            <p className={`text-3xl font-serif ${financial.grossProfit >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-500'}`}>
+              R$ {financial.grossProfit.toFixed(2)}
+            </p>
+            <p className="text-[10px] text-gray-400 mt-2">Receita − CMV</p>
+          </div>
+          {/* Margem Bruta */}
+          <div className="bg-gray-50 dark:bg-white/5 rounded-2xl p-6 border border-gray-100 dark:border-white/5">
+            <div className="flex items-center gap-2 mb-3">
+              <TrendingUp size={14} className="text-orange-500" />
+              <p className="text-[9px] text-gray-400 font-bold uppercase tracking-[0.2em]">Margem Bruta</p>
+            </div>
+            <p className="text-3xl font-serif text-orange-500">{financial.grossMargin.toFixed(1)}%</p>
+            <div className="mt-3 h-2 bg-gray-200 dark:bg-white/5 rounded-full overflow-hidden">
+              <div
+                className={`h-full rounded-full transition-all duration-700 ${
+                  financial.grossMargin >= 50 ? 'bg-green-500'
+                  : financial.grossMargin >= 30 ? 'bg-orange-500'
+                  : 'bg-red-500'
+                }`}
+                style={{ width: `${Math.min(100, Math.max(0, financial.grossMargin))}%` }}
+              />
+            </div>
+            <p className="text-[9px] text-gray-400 mt-2 uppercase font-bold">
+              {financial.grossMargin >= 50 ? '✓ Margem Saudável' : financial.grossMargin >= 30 ? '⚠ Margem Moderada' : '▼ Margem Crítica'}
+            </p>
+          </div>
+        </div>
+        {financial.cmv === 0 && (
+          <p className="text-center text-gray-300 dark:text-white/10 text-xs mt-6 uppercase font-bold tracking-wider">
+            Defina o custo unitário (R$) nos produtos e registre entradas de estoque para ativar o CMV.
+          </p>
+        )}
       </div>
 
       {/* ─── Modo Manutenção ─────────────────────────────────────── */}

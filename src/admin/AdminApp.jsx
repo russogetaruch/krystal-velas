@@ -9,18 +9,24 @@ import AdminLogs from './AdminLogs';
 import AdminProducts from './AdminProducts';
 import AdminCategories from './AdminCategories';
 import AdminOrders from './AdminOrders';
-import { LayoutDashboard, Images, MessageSquare, FileText, LogOut, Menu, X, Sun, Moon, ExternalLink, Shield, UserCog, Lock, Activity, ShoppingBag, Tag, ShoppingCart, ShieldAlert } from 'lucide-react';
+import AdminInventory from './AdminInventory';
+import AdminInvoices from './AdminInvoices';
+import AdminSuppliers from './AdminSuppliers';
+import { LayoutDashboard, Images, MessageSquare, FileText, LogOut, Menu, X, Sun, Moon, ExternalLink, Shield, UserCog, Lock, Activity, ShoppingBag, Tag, ShoppingCart, ShieldAlert, Warehouse, Receipt, Building2 } from 'lucide-react';
 
 const NAV = [
-  { id: 'dashboard',    label: 'Dashboard',    icon: LayoutDashboard },
-  { id: 'orders',       label: 'Vendas',       icon: ShoppingCart },
-  { id: 'products',     label: 'Produtos',     icon: ShoppingBag },
-  { id: 'categories',   label: 'Categorias',   icon: Tag },
-  { id: 'gallery',      label: 'Fotos Vitrine', icon: Images },
-  { id: 'testimonials', label: 'Depoimentos',  icon: MessageSquare },
-  { id: 'content',      label: 'Conteúdo',     icon: FileText },
-  { id: 'logs',         label: 'Logs',         icon: Activity, superOnly: true },
-  { id: 'users',        label: 'Usuários',     icon: UserCog, superOnly: true },
+  { id: 'dashboard',    label: 'Dashboard',      icon: LayoutDashboard },
+  { id: 'orders',       label: 'Vendas',          icon: ShoppingCart },
+  { id: 'products',     label: 'Produtos',        icon: ShoppingBag },
+  { id: 'categories',   label: 'Categorias',      icon: Tag },
+  { id: 'inventory',    label: 'Estoque',         icon: Warehouse },
+  { id: 'invoices',     label: 'NF-e',            icon: Receipt },
+  { id: 'suppliers',    label: 'Fornecedores',    icon: Building2,    superOnly: true },
+  { id: 'gallery',      label: 'Fotos Vitrine',   icon: Images },
+  { id: 'testimonials', label: 'Depoimentos',     icon: MessageSquare },
+  { id: 'content',      label: 'Conteúdo',        icon: FileText },
+  { id: 'logs',         label: 'Logs',            icon: Activity,     superOnly: true },
+  { id: 'users',        label: 'Usuários',        icon: UserCog,      superOnly: true },
 ];
 
 export default function AdminApp({ session, onLogout }) {
@@ -133,6 +139,9 @@ export default function AdminApp({ session, onLogout }) {
       case 'products':     return <AdminProducts session={session} />;
       case 'categories':   return <AdminCategories session={session} />;
       case 'orders':       return <AdminOrders session={session} />;
+      case 'inventory':    return <AdminInventory session={session} />;
+      case 'invoices':     return <AdminInvoices session={session} />;
+      case 'suppliers':    return <AdminSuppliers session={session} />;
       case 'users':        return <AdminUsers currentUser={profile} session={session} />;
       case 'logs':         return <AdminLogs session={session} />;
       default:             return <AdminDashboard onNavigate={navigate} session={session} />;

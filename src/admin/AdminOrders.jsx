@@ -16,10 +16,11 @@ import {
   Phone,
   FileText,
   Copy,
-  Check
+  Check,
+  Zap
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { logAudit } from './adminUtils';
+import { logAudit, deductStock } from './adminUtils';
 
 export default function AdminOrders({ session }) {
   const [orders, setOrders] = useState([]);
@@ -32,6 +33,7 @@ export default function AdminOrders({ session }) {
   const [items, setItems] = useState([]);
   const [itemsLoading, setItemsLoading] = useState(false);
   const [copiedId, setCopiedId] = useState(null);
+  const [pipelineRunning, setPipelineRunning] = useState(null); // order_id em processamento
 
   useEffect(() => {
     fetchOrders();
@@ -75,6 +77,39 @@ export default function AdminOrders({ session }) {
     }
   }
 
+  /**
+   * Pipeline de Pagamento: executado quando status muda para 'paid'
+   * 1. Baixa automática de estoque (deductStock)
+   * 2. Cria registro NF-e em 'aguardando'
+   */
+  async function paymentPipeline(orderId, orderItems) {
+    setPipelineRunning(orderId);
+    try {
+      // 1. Baixa de estoque
+      if (orderItems && orderItems.length > 0) {
+        await deductStock(session, orderId, orderItems);
+      }
+
+      // 2. Cria registro de NF-e (status 'aguardando' — emissão manual na aba NF-e)
+      const { data: existingInvoice } = await supabase
+        .from('invoices')
+        .select('id')
+        .eq('order_id', orderId)
+        .maybeSingle();
+
+      if (!existingInvoice) {
+        await supabase.from('invoices').insert({
+          order_id : orderId,
+          status   : 'aguardando',
+        });
+      }
+    } catch (err) {
+      console.error('[paymentPipeline] Erro:', err);
+    } finally {
+      setPipelineRunning(null);
+    }
+  }
+
   async function updateStatus(orderId, newStatus) {
     try {
       const { error } = await supabase
@@ -89,6 +124,13 @@ export default function AdminOrders({ session }) {
       if (selectedOrder?.id === orderId) setSelectedOrder({ ...selectedOrder, status: newStatus });
       
       await logAudit(session, 'ORDER_STATUS_CHANGE', { order_id: orderId, status: newStatus });
+
+      // 🔥 Pipeline de Pagamento — Baixa Automática + NF-e
+      if (newStatus === 'paid') {
+        const order = orders.find(o => o.id === orderId);
+        await paymentPipeline(orderId, order?.order_items || []);
+      }
+
     } catch (err) {
       alert('Erro ao atualizar status');
     }
