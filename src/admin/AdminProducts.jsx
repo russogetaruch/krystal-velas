@@ -4,7 +4,7 @@ import { Plus, Trash2, Edit2, Save, X, Package, Search, Filter, ImagePlus, Uploa
 import DOMPurify from 'dompurify';
 
 const ALLOWED_TYPES = ['image/webp', 'image/png', 'image/jpeg', 'image/jpg'];
-const MAX_SIZE_MB = 3;
+const MAX_SIZE_MB = 10;
 
 export default function AdminProducts() {
   const [products, setProducts] = useState([]);
@@ -80,7 +80,7 @@ export default function AdminProducts() {
     if (!file) return;
     
     if (!ALLOWED_TYPES.includes(file.type)) { setError('Use WebP, PNG ou JPG.'); return; }
-    if (file.size > MAX_SIZE_MB * 1024 * 1024) { setError(`Máximo ${MAX_SIZE_MB}MB.`); return; }
+    if (file.size > MAX_SIZE_MB * 1024 * 1024) { alert('Arquivo muito grande! Máximo 10MB.'); return; }
     
     setUploading(true);
     setError(null);
@@ -101,6 +101,26 @@ export default function AdminProducts() {
     } finally {
       setUploading(false);
     }
+  };
+
+  const handleQuickAddCategory = async () => {
+    const name = prompt('Nome da nova categoria:');
+    if (!name) return;
+    
+    setLoading(true);
+    const { data, error } = await supabase
+      .from('categories')
+      .insert([{ name: name.trim(), slug: name.trim().toLowerCase().replace(/\s+/g, '-') }])
+      .select()
+      .single();
+      
+    if (error) {
+      alert('Erro ao criar categoria: ' + error.message);
+    } else {
+      setCategories(prev => [...prev, data].sort((a, b) => a.name.localeCompare(b.name)));
+      setForm(prev => ({ ...prev, category_id: data.id }));
+    }
+    setLoading(false);
   };
 
   const handleSave = async (e) => {
@@ -249,10 +269,20 @@ export default function AdminProducts() {
                 
                 <div>
                   <label className="text-gray-400 text-[10px] font-bold uppercase tracking-widest block mb-1.5">Categoria *</label>
-                  <select required value={form.category_id} onChange={e => setForm({...form, category_id: e.target.value})} className="w-full bg-gray-50 dark:bg-white/5 border border-transparent focus:border-orange-500 rounded-xl px-4 py-3 dark:text-white">
-                    <option value="">Selecione...</option>
-                    {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                  </select>
+                  <div className="flex gap-2">
+                    <select required value={form.category_id} onChange={e => setForm({...form, category_id: e.target.value})} className="flex-1 bg-gray-50 dark:bg-white/5 border border-transparent focus:border-orange-500 rounded-xl px-4 py-3 dark:text-white">
+                      <option value="">Selecione...</option>
+                      {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                    </select>
+                    <button 
+                      type="button"
+                      onClick={handleQuickAddCategory}
+                      className="p-3 bg-orange-500 hover:bg-orange-600 text-white rounded-xl transition-all shadow-lg shadow-orange-500/20"
+                      title="Criar nova categoria"
+                    >
+                      <Plus size={20} />
+                    </button>
+                  </div>
                 </div>
                 
                 <div className="grid grid-cols-2 gap-4">
@@ -278,10 +308,18 @@ export default function AdminProducts() {
                     {form.images.length < 4 && (
                       <button type="button" disabled={uploading} onClick={() => fileInputRef.current?.click()} className="aspect-square rounded-xl border-2 border-dashed border-gray-200 flex flex-col items-center justify-center text-gray-400 hover:border-orange-400 transition-colors">
                         {uploading ? <RefreshCw className="animate-spin" size={20} /> : <Upload size={20} />}
-                        <span className="text-[8px] font-bold uppercase mt-1">Sobe</span>
+                        <p className="text-[10px] text-gray-400 mt-2 uppercase font-bold tracking-tighter">
+                          {form.images.length} / 5 fotos · Máximo 10MB por arquivo.
+                        </p>
                       </button>
                     )}
                   </div>
+                  
+                  {/* Ajuda Categoria */}
+                  <div className="md:col-span-2 bg-orange-50 dark:bg-orange-500/10 p-3 rounded-xl border border-orange-100 dark:border-orange-500/20 text-[10px] text-orange-700 dark:text-orange-400 font-bold uppercase tracking-wider">
+                    Dica: Se a categoria desejada não aparecer na lista, salve este produto como rascunho e cadastre a categoria no menu "Categorias" do painel lateral.
+                  </div>
+                  
                   <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileUpload} />
                 </div>
 
