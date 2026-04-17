@@ -107,7 +107,7 @@ export default function AdminApp({ session, onLogout }) {
           <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-6">
             <Lock size={32} />
           </div>
-          <h1 className="text-2xl font-serif text-brown mb-4">Acesso Restrito</h1>
+          <h1 className="text-xl font-serif text-brown dark:text-white">Painel Administrativo v2</h1>
           <p className="text-gray-500 text-sm leading-relaxed mb-8">
             Sua conta (<span className="font-bold text-brown">{session.user.email}</span>) está cadastrada, mas ainda não possui permissões administrativas.
           </p>
