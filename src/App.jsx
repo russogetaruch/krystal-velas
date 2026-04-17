@@ -12,6 +12,7 @@ import Footer from './components/Footer';
 import CookieBanner from './components/CookieBanner';
 import MaintenancePage from './components/MaintenancePage';
 import FloatingWhatsApp from './components/FloatingWhatsApp';
+import CartDrawer from './components/CartDrawer';
 import { useContent } from './context/ContentContext';
 
 // Error Boundary Simple
