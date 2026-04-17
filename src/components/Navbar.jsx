@@ -29,7 +29,6 @@ export default function Navbar() {
   const navItems = [
     { name: 'A Fábrica', id: 'fabrica' },
     { name: 'Diferenciais', id: 'diferenciais' },
-    { name: 'Loja Online', id: 'loja' },
     { name: 'Dúvidas', id: 'duvidas' },
     { name: 'Contato', id: 'contato' }
   ];
@@ -37,7 +36,7 @@ export default function Navbar() {
   return (
     <header className={`fixed top-0 left-0 w-full z-50 transition-all duration-500 ${
       isScrolled 
-        ? 'bg-brown/80 backdrop-blur-xl shadow-[0_8px_32px_rgba(0,0,0,0.12)] border-b border-white/5 py-4' 
+        ? 'bg-brown/80 backdrop-blur-xl shadow-[0_8px_32px_rgba(0,0,0,0.12)] border-b border-white/5 py-3' 
         : 'bg-transparent py-6'
     }`}>
       <div className="max-w-7xl mx-auto px-6 flex justify-between items-center">
@@ -56,10 +55,10 @@ export default function Navbar() {
             <button
               key={item.id}
               onClick={() => scrollToSection(item.id, null)}
-              className={`uppercase text-[11px] font-bold tracking-[0.2em] transition-all duration-300 ${
+              className={`uppercase text-[10px] font-bold tracking-[0.2em] transition-all duration-300 ${
                 isScrolled 
-                  ? 'text-white/80 hover:text-gold' 
-                  : 'text-white drop-shadow-lg hover:text-gold/90'
+                  ? 'text-white/60 hover:text-white' 
+                  : 'text-white drop-shadow-lg hover:text-gold'
               } hover:-translate-y-0.5 bg-transparent border-none cursor-pointer`}
             >
               {item.name}
@@ -67,8 +66,17 @@ export default function Navbar() {
           ))}
         </nav>
 
-        {/* Actions */}
-        <div className="flex items-center gap-4">
+        {/* Actions - Dedicated Store Button */}
+        <div className="flex items-center gap-6">
+          <a 
+            href="/loja"
+            className={`hidden md:flex items-center gap-2 px-6 py-2.5 rounded-full border border-orange-500/30 text-white font-bold uppercase tracking-widest text-[10px] transition-all hover:bg-orange-500 hover:shadow-lg hover:shadow-orange-500/30 active:scale-95 ${
+              isScrolled ? 'bg-orange-500/10' : 'bg-white/10 backdrop-blur-sm'
+            }`}
+          >
+            Acessar Loja Online
+          </a>
+
           {/* Mobile Toggle */}
           <button
             className="md:hidden"
@@ -101,6 +109,12 @@ export default function Navbar() {
                   {item.name}
                 </button>
               ))}
+              <a 
+                href="/loja"
+                className="bg-orange-500 text-white text-center py-4 rounded-2xl font-bold uppercase tracking-widest text-sm shadow-xl"
+              >
+                Loja Online
+              </a>
             </div>
           </motion.nav>
         )}
