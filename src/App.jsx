@@ -44,10 +44,12 @@ const AdminApp   = lazy(() => import('./admin/AdminApp'));
 const AdminLogin = lazy(() => import('./admin/AdminLogin'));
 const AdminSetup = lazy(() => import('./admin/AdminSetup'));
 const StorePage  = lazy(() => import('./pages/StorePage'));
+const CheckoutPage = lazy(() => import('./pages/CheckoutPage'));
 
 const pathname = window.location.pathname;
 const isAdminRoute = pathname.startsWith('/admin');
 const isStoreRoute = pathname === '/loja' || pathname.startsWith('/loja/');
+const isCheckoutRoute = pathname === '/checkout';
 
 // ── Admin Root ──────────────────────────────────────────────────────────────
 function AdminRoot() {
@@ -149,7 +151,7 @@ export default function App() {
           <div className="text-white/30 animate-pulse text-sm font-bold tracking-widest uppercase">Krystal Velas...</div>
         </div>
       }>
-        {isAdminRoute ? <AdminRoot /> : (isStoreRoute ? <StoreSite /> : <PublicSite />)}
+        {isAdminRoute ? <AdminRoot /> : (isStoreRoute ? <StoreSite /> : (isCheckoutRoute ? <CheckoutPage /> : <PublicSite />))}
       </Suspense>
     </ErrorBoundary>
   );

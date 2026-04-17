@@ -8,12 +8,8 @@ export default function CartDrawer() {
   const { content } = useContent();
 
   const handleCheckout = () => {
-    const phone = content.whatsapp_number || '5543998073376';
-    const itemsList = cart.map(item => `- ${item.quantity}x ${item.name} (R$ ${(item.price * item.quantity).toFixed(2)})`).join('\n');
-    const message = `Olá! Gostaria de fazer um pedido:\n\n${itemsList}\n\n*Total: R$ ${totalPrice.toFixed(2)}*`;
-    
-    const url = `https://wa.me/${phone.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`;
-    window.open(url, '_blank');
+    setIsCartOpen(false);
+    window.location.href = '/checkout';
   };
 
   return (

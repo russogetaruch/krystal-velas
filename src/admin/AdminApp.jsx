@@ -8,10 +8,12 @@ import AdminUsers from './AdminUsers';
 import AdminLogs from './AdminLogs';
 import AdminProducts from './AdminProducts';
 import AdminCategories from './AdminCategories';
-import { LayoutDashboard, Images, MessageSquare, FileText, LogOut, Menu, X, Sun, Moon, ExternalLink, Shield, UserCog, Lock, Activity, ShoppingBag, Tag } from 'lucide-react';
+import AdminOrders from './AdminOrders';
+import { LayoutDashboard, Images, MessageSquare, FileText, LogOut, Menu, X, Sun, Moon, ExternalLink, Shield, UserCog, Lock, Activity, ShoppingBag, Tag, ShoppingCart } from 'lucide-react';
 
 const NAV = [
   { id: 'dashboard',    label: 'Dashboard',    icon: LayoutDashboard },
+  { id: 'orders',       label: 'Vendas',       icon: ShoppingCart },
   { id: 'products',     label: 'Produtos',     icon: ShoppingBag },
   { id: 'categories',   label: 'Categorias',   icon: Tag },
   { id: 'gallery',      label: 'Fotos Vitrine', icon: Images },
@@ -128,6 +130,7 @@ export default function AdminApp({ session, onLogout }) {
       case 'content':      return <AdminContent />;
       case 'products':     return <AdminProducts />;
       case 'categories':   return <AdminCategories />;
+      case 'orders':       return <AdminOrders />;
       case 'users':        return <AdminUsers currentUser={profile} />;
       case 'logs':         return <AdminLogs />;
       default:             return <AdminDashboard onNavigate={navigate} />;
