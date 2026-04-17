@@ -31,7 +31,6 @@ export default function AdminProducts({ session }) {
   
   const [uploading, setUploading] = useState(false);
   const [compressing, setCompressing] = useState(false);
-  const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCat, setFilterCat] = useState('all');
   
