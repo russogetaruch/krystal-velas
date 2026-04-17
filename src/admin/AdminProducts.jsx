@@ -175,7 +175,7 @@ export default function AdminProducts() {
             placeholder="Buscar por nome..." 
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 bg-gray-50 dark:bg-white/5 border border-transparent focus:border-orange-500 rounded-xl text-sm"
+            className="w-full pl-10 pr-4 py-2 bg-gray-50 dark:bg-white/5 border border-transparent focus:border-orange-500 rounded-xl text-sm dark:text-white"
           />
         </div>
         <div className="flex items-center gap-2">
@@ -183,7 +183,7 @@ export default function AdminProducts() {
           <select 
             value={filterCat}
             onChange={e => setFilterCat(e.target.value)}
-            className="bg-gray-50 dark:bg-white/5 border border-transparent focus:border-orange-500 rounded-xl px-4 py-2 text-sm"
+            className="bg-gray-50 dark:bg-white/5 border border-transparent focus:border-orange-500 rounded-xl px-4 py-2 text-sm dark:text-gray-200"
           >
             <option value="all">Todas as Categorias</option>
             {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
@@ -244,12 +244,12 @@ export default function AdminProducts() {
               <div className="grid md:grid-cols-2 gap-6">
                 <div className="md:col-span-2">
                   <label className="text-gray-400 text-[10px] font-bold uppercase tracking-widest block mb-2">Nome do Produto *</label>
-                  <input required value={form.name} onChange={e => setForm({...form, name: e.target.value})} className="w-full bg-gray-50 dark:bg-white/5 border border-transparent focus:border-orange-500 rounded-xl px-4 py-3" />
+                  <input required value={form.name} onChange={e => setForm({...form, name: e.target.value})} className="w-full bg-gray-50 dark:bg-white/5 border border-transparent focus:border-orange-500 rounded-xl px-4 py-3 dark:text-white" />
                 </div>
                 
                 <div>
                   <label className="text-gray-400 text-[10px] font-bold uppercase tracking-widest block mb-1.5">Categoria *</label>
-                  <select required value={form.category_id} onChange={e => setForm({...form, category_id: e.target.value})} className="w-full bg-gray-50 dark:bg-white/5 border border-transparent focus:border-orange-500 rounded-xl px-4 py-3">
+                  <select required value={form.category_id} onChange={e => setForm({...form, category_id: e.target.value})} className="w-full bg-gray-50 dark:bg-white/5 border border-transparent focus:border-orange-500 rounded-xl px-4 py-3 dark:text-white">
                     <option value="">Selecione...</option>
                     {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                   </select>
@@ -258,11 +258,11 @@ export default function AdminProducts() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="text-gray-400 text-[10px] font-bold uppercase tracking-widest block mb-1.5">Preço (R$) *</label>
-                    <input required type="number" step="0.01" value={form.price} onChange={e => setForm({...form, price: e.target.value})} className="w-full bg-gray-50 dark:bg-white/5 border border-transparent focus:border-orange-500 rounded-xl px-4 py-3" />
+                    <input required type="number" step="0.01" value={form.price} onChange={e => setForm({...form, price: e.target.value})} className="w-full bg-gray-50 dark:bg-white/5 border border-transparent focus:border-orange-500 rounded-xl px-4 py-3 dark:text-white" />
                   </div>
                   <div>
                     <label className="text-gray-400 text-[10px] font-bold uppercase tracking-widest block mb-1.5">Estoque</label>
-                    <input type="number" value={form.stock} onChange={e => setForm({...form, stock: e.target.value})} className="w-full bg-gray-50 dark:bg-white/5 border border-transparent focus:border-orange-500 rounded-xl px-4 py-3" />
+                    <input type="number" value={form.stock} onChange={e => setForm({...form, stock: e.target.value})} className="w-full bg-gray-50 dark:bg-white/5 border border-transparent focus:border-orange-500 rounded-xl px-4 py-3 dark:text-white" />
                   </div>
                 </div>
 
@@ -287,7 +287,7 @@ export default function AdminProducts() {
 
                 <div className="md:col-span-2">
                   <label className="text-gray-400 text-[10px] font-bold uppercase tracking-widest block mb-2">Descrição</label>
-                  <textarea value={form.description} onChange={e => setForm({...form, description: e.target.value})} className="w-full bg-gray-50 dark:bg-white/5 border border-transparent focus:border-orange-500 rounded-xl px-4 py-3 h-24 resize-none" />
+                  <textarea value={form.description} onChange={e => setForm({...form, description: e.target.value})} className="w-full bg-gray-50 dark:bg-white/5 border border-transparent focus:border-orange-500 rounded-xl px-4 py-3 h-24 resize-none dark:text-white" />
                 </div>
                 
                 <div className="flex items-center gap-3">

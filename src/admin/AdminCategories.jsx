@@ -67,13 +67,13 @@ export default function AdminCategories() {
               placeholder="Nome (ex: Decorativas)" 
               value={newCat.name}
               onChange={e => setNewCat({...newCat, name: e.target.value})}
-              className="w-full bg-gray-50 dark:bg-white/5 border border-gray-100 dark:border-white/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-orange-500 transition-all"
+              className="w-full bg-gray-50 dark:bg-white/5 border border-gray-100 dark:border-white/10 rounded-xl px-4 py-3 text-sm dark:text-white focus:outline-none focus:border-orange-500 transition-all"
             />
             <textarea 
               placeholder="Descrição curta..." 
               value={newCat.description}
               onChange={e => setNewCat({...newCat, description: e.target.value})}
-              className="w-full bg-gray-50 dark:bg-white/5 border border-gray-100 dark:border-white/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-orange-500 transition-all h-24 resize-none"
+              className="w-full bg-gray-50 dark:bg-white/5 border border-gray-100 dark:border-white/10 rounded-xl px-4 py-3 text-sm dark:text-white focus:outline-none focus:border-orange-500 transition-all h-24 resize-none"
             />
             <button className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-3.5 rounded-xl transition-all shadow-lg shadow-orange-500/20 text-xs uppercase tracking-widest">
               Adicionar
@@ -99,13 +99,13 @@ export default function AdminCategories() {
                         <input 
                           value={editForm.name} 
                           onChange={e => setEditForm({...editForm, name: e.target.value})}
-                          className="w-full bg-white dark:bg-white/10 border border-gray-200 dark:border-white/20 rounded-lg px-3 py-2 text-sm"
+                          className="w-full bg-white dark:bg-white/10 border border-gray-200 dark:border-white/20 rounded-lg px-3 py-2 text-sm dark:text-white"
                         />
                         <input 
                           value={editForm.description} 
                           onChange={e => setEditForm({...editForm, description: e.target.value})}
                           placeholder="Descrição"
-                          className="w-full bg-white dark:bg-white/10 border border-gray-200 dark:border-white/20 rounded-lg px-3 py-1 text-xs"
+                          className="w-full bg-white dark:bg-white/10 border border-gray-200 dark:border-white/20 rounded-lg px-3 py-1 text-xs dark:text-white"
                         />
                       </div>
                     ) : (
