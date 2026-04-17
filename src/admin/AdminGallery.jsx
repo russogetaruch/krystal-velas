@@ -1,5 +1,5 @@
-import { useState, useRef, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
+import imageCompression from 'browser-image-compression';
 import { Upload, X, CheckCircle, AlertCircle, ImagePlus, Trash2, RefreshCw, Pencil, Save } from 'lucide-react';
 import DOMPurify from 'dompurify';
 
@@ -28,7 +28,7 @@ function EditModal({ item, onClose, onSaved }) {
   const handleFile = (f) => {
     if (!f) return;
     if (!ALLOWED_TYPES.includes(f.type)) { setError('Use WebP, PNG ou JPG.'); return; }
-    if (f.size > MAX_SIZE_MB * 1024 * 1024) { setError(`Máximo ${MAX_SIZE_MB}MB.`); return; }
+    if (f.size > 20 * 1024 * 1024) { setError('Arquivo ignorante! Tente algo menor que 20MB.'); return; }
     setNewFile(f);
     setPreview(URL.createObjectURL(f));
     setError(null);
@@ -44,10 +44,15 @@ function EditModal({ item, onClose, onSaved }) {
       let storagePath = item.storage_path;
 
       if (newFile) {
-        const ext = newFile.name.split('.').pop();
+        setCompressing(true);
+        const options = { maxSizeMB: 3, maxWidthOrHeight: 1920, useWebWorker: true, fileType: 'image/webp' };
+        const compressedFile = await imageCompression(newFile, options);
+        setCompressing(false);
+
+        const ext = 'webp';
         const path = `gallery/${Date.now()}.${ext}`;
         const { error: upErr } = await supabase.storage
-          .from('gallery').upload(path, newFile, { cacheControl: '3600', upsert: false, contentType: newFile.type });
+          .from('gallery').upload(path, compressedFile, { cacheControl: '3600', upsert: false, contentType: 'image/webp' });
         if (upErr) throw new Error('Erro no upload: ' + upErr.message);
 
         if (storagePath && !storagePath.startsWith('local/')) {
@@ -160,10 +165,10 @@ function EditModal({ item, onClose, onSaved }) {
           <button onClick={onClose} className="flex-1 py-3 rounded-xl border border-gray-200 text-gray-600 font-bold text-sm hover:bg-gray-50 transition-colors">
             Cancelar
           </button>
-          <button onClick={handleSave} disabled={saving}
+          <button onClick={handleSave} disabled={saving || compressing}
             className="flex-1 py-3 rounded-xl bg-orange-500 hover:bg-orange-600 disabled:opacity-40 text-white font-bold text-sm flex items-center justify-center gap-2 transition-colors">
-            <Save size={15} />
-            {saving ? 'Salvando...' : 'Salvar Alterações'}
+            {compressing ? <RefreshCw className="animate-spin" size={15} /> : <Save size={15} />}
+            {compressing ? 'Comprimindo...' : (saving ? 'Salvando...' : 'Salvar Alterações')}
           </button>
         </div>
       </div>
@@ -180,6 +185,7 @@ export default function AdminGallery() {
   const [name, setName]               = useState('');
   const [imgCategory, setImgCategory] = useState('');
   const [uploading, setUploading]     = useState(false);
+  const [compressing, setCompressing] = useState(false);
   const [message, setMessage]         = useState(null);
   const [gallery, setGallery]         = useState([]);
   const [loadingGallery, setLoadingGallery] = useState(true);
@@ -193,7 +199,7 @@ export default function AdminGallery() {
 
   const validateFile = (f) => {
     if (!ALLOWED_TYPES.includes(f.type)) { setMessage({ type: 'error', text: 'Formato inválido. Use: WebP, PNG ou JPG.' }); return false; }
-    if (f.size > MAX_SIZE_MB * 1024 * 1024) { setMessage({ type: 'error', text: `Arquivo muito grande. Máximo: ${MAX_SIZE_MB}MB.` }); return false; }
+    if (f.size > 20 * 1024 * 1024) { setMessage({ type: 'error', text: 'Arquivo muito grande. Máximo 20MB.' }); return false; }
     return true;
   };
 
@@ -211,12 +217,21 @@ export default function AdminGallery() {
 
   const handleUpload = async () => {
     if (!file || !name) { setMessage({ type: 'error', text: 'Preencha o nome e selecione uma imagem.' }); return; }
-    setUploading(true);
-    const ext = file.name.split('.').pop();
-    const path = `gallery/${Date.now()}.${ext}`;
-    const { error: uploadErr } = await supabase.storage.from('gallery').upload(path, file, { cacheControl: '3600', upsert: false, contentType: file.type });
-    if (uploadErr) { setMessage({ type: 'error', text: 'Erro no upload: ' + uploadErr.message }); setUploading(false); return; }
-    const { data: urlData } = supabase.storage.from('gallery').getPublicUrl(path);
+    setCompressing(true);
+    
+    try {
+      const options = { maxSizeMB: 3, maxWidthOrHeight: 1920, useWebWorker: true, fileType: 'image/webp' };
+      const compressedFile = await imageCompression(file, options);
+      
+      setCompressing(false);
+      setUploading(true);
+      
+      const ext = 'webp';
+      const path = `gallery/${Date.now()}.${ext}`;
+      const { error: uploadErr } = await supabase.storage.from('gallery').upload(path, compressedFile, { cacheControl: '3600', upsert: false, contentType: 'image/webp' });
+      if (uploadErr) throw uploadErr;
+
+      const { data: urlData } = supabase.storage.from('gallery').getPublicUrl(path);
     await supabase.from('gallery').insert({ 
       name: sanitize(name), 
       category, 
@@ -225,9 +240,14 @@ export default function AdminGallery() {
       storage_path: path 
     });
     setMessage({ type: 'success', text: 'Imagem publicada com sucesso!' });
-    setFile(null); setPreview(null); setName(''); setImgCategory('');
-    setUploading(false);
-    loadGallery();
+      setName(''); setImgCategory('');
+      setUploading(false);
+      loadGallery();
+    } catch (err) {
+      setMessage({ type: 'error', text: 'Erro no processo: ' + err.message });
+      setUploading(false);
+      setCompressing(false);
+    }
   };
 
   const handleDelete = async (item) => {
@@ -317,10 +337,10 @@ export default function AdminGallery() {
                 </div>
               )}
 
-              <button onClick={handleUpload} disabled={uploading || !file}
+              <button onClick={handleUpload} disabled={uploading || compressing || !file}
                 className="w-full bg-orange-500 hover:bg-orange-600 disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed text-white font-bold uppercase tracking-widest text-sm py-4 rounded-xl transition-colors flex items-center justify-center gap-2">
-                <ImagePlus size={16} />
-                {uploading ? 'Enviando...' : 'Publicar na Vitrine'}
+                {(uploading || compressing) ? <RefreshCw className="animate-spin" size={16} /> : <ImagePlus size={16} />}
+                {compressing ? 'Comprimindo...' : (uploading ? 'Enviando...' : 'Publicar na Vitrine')}
               </button>
             </div>
           </div>

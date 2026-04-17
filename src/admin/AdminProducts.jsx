@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef } from 'react';
 import { supabase } from '../lib/supabase';
+import imageCompression from 'browser-image-compression';
 import { Plus, Trash2, Edit2, Save, X, Package, Search, Filter, ImagePlus, Upload, AlertCircle, ShoppingCart, RefreshCw } from 'lucide-react';
 import DOMPurify from 'dompurify';
 
@@ -25,6 +25,7 @@ export default function AdminProducts() {
   });
   
   const [uploading, setUploading] = useState(false);
+  const [compressing, setCompressing] = useState(false);
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCat, setFilterCat] = useState('all');
@@ -80,25 +81,39 @@ export default function AdminProducts() {
     if (!file) return;
     
     if (!ALLOWED_TYPES.includes(file.type)) { setError('Use WebP, PNG ou JPG.'); return; }
-    if (file.size > MAX_SIZE_MB * 1024 * 1024) { alert('Arquivo muito grande! Máximo 10MB.'); return; }
+    if (file.size > 20 * 1024 * 1024) { setError('Arquivo ignorante! Tente algo menor que 20MB.'); return; }
     
-    setUploading(true);
+    setCompressing(true);
     setError(null);
     
     try {
-      const ext = file.name.split('.').pop();
+      // Motor de Compressão Vittalix
+      const options = {
+        maxSizeMB: 3,
+        maxWidthOrHeight: 1920,
+        useWebWorker: true,
+        fileType: 'image/webp' // Converte para o formato mais leve do mercado
+      };
+
+      const compressedFile = await imageCompression(file, options);
+      
+      setCompressing(false);
+      setUploading(true);
+      
+      const ext = 'webp';
       const path = `products/${Date.now()}.${ext}`;
       
       const { error: upErr } = await supabase.storage
-        .from('gallery').upload(path, file); // Reusing 'gallery' bucket for now
+        .from('gallery').upload(path, compressedFile);
         
       if (upErr) throw upErr;
       
       const { data: urlData } = supabase.storage.from('gallery').getPublicUrl(path);
       setForm(prev => ({ ...prev, images: [...prev.images, urlData.publicUrl] }));
     } catch (err) {
-      setError('Erro no upload: ' + err.message);
+      setError('Erro no processo: ' + err.message);
     } finally {
+      setCompressing(false);
       setUploading(false);
     }
   };
@@ -305,12 +320,23 @@ export default function AdminProducts() {
                         <button type="button" onClick={() => setForm({...form, images: form.images.filter((_, i) => i !== idx)})} className="absolute top-1 right-1 p-1 bg-black/50 text-white rounded-full hover:bg-red-500"><X size={12} /></button>
                       </div>
                     ))}
-                    {form.images.length < 4 && (
-                      <button type="button" disabled={uploading} onClick={() => fileInputRef.current?.click()} className="aspect-square rounded-xl border-2 border-dashed border-gray-200 flex flex-col items-center justify-center text-gray-400 hover:border-orange-400 transition-colors">
-                        {uploading ? <RefreshCw className="animate-spin" size={20} /> : <Upload size={20} />}
-                        <p className="text-[10px] text-gray-400 mt-2 uppercase font-bold tracking-tighter">
-                          {form.images.length} / 5 fotos · Máximo 10MB por arquivo.
-                        </p>
+                    {form.images.length < 5 && (
+                      <button type="button" disabled={uploading || compressing} onClick={() => fileInputRef.current?.click()} className="aspect-square rounded-xl border-2 border-dashed border-gray-200 flex flex-col items-center justify-center text-gray-400 hover:border-orange-400 transition-colors relative overflow-hidden">
+                        {(uploading || compressing) ? (
+                          <div className="flex flex-col items-center gap-1">
+                            <RefreshCw className="animate-spin text-orange-500" size={24} />
+                            <span className="text-[8px] font-bold uppercase text-orange-600">
+                              {compressing ? 'Comprimindo...' : 'Subindo...'}
+                            </span>
+                          </div>
+                        ) : (
+                          <>
+                            <Upload size={20} />
+                            <p className="text-[10px] text-gray-400 mt-2 uppercase font-bold tracking-tighter px-2 text-center">
+                              Add Foto
+                            </p>
+                          </>
+                        )}
                       </button>
                     )}
                   </div>
