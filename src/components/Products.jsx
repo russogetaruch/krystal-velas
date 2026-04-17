@@ -1,65 +1,47 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, ShoppingBag, Plus, Minus } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { useCart } from '../context/CartContext';
 import { useSiteContent } from '../hooks/useSiteContent';
 
-// Fallback local — usado se o Supabase estiver offline
-const FALLBACK_PRODUCTS = [
-  { id: 1,   name: 'Vela Votiva Branca 298g', category: 'fe',     imgCategory: 'Linha Votiva',      src: '/produtos/vela1.png' },
-  { id: 5,   name: 'Nossa Senhora',           category: 'fe',     imgCategory: 'Devocional',        src: '/produtos/vela5.png' },
-  { id: 12,  name: 'Vela Anil',               category: 'fe',     imgCategory: 'Litúrgica',         src: '/produtos/vela12.png' },
-  { id: 8,   name: 'Pilação de Círios',       category: 'fe',     imgCategory: 'Uso Contínuo',      src: '/produtos/vela8.png' },
-  { id: 9,   name: 'Kit Promessas',           category: 'fe',     imgCategory: 'Pacote Família',    src: '/produtos/vela9.png' },
-  { id: 13,  name: 'Rosa Devocional',         category: 'fe',     imgCategory: 'Promessas',         src: '/produtos/vela13.png' },
-  { id: 4,   name: 'Mística Naturista',       category: 'casa',   imgCategory: 'Linha Decorativa',  src: '/produtos/vela4.png' },
-  { id: 6,   name: 'Azul Premium',            category: 'casa',   imgCategory: 'Atmosfera',         src: '/produtos/vela6.png' },
-  { id: 14,  name: 'Vela Verde',              category: 'casa',   imgCategory: 'Cura & Bem Estar',  src: '/produtos/vela14.png' },
-  { id: 3,   name: 'Votivas Coloridas',       category: 'casa',   imgCategory: 'Design Interior',   src: '/produtos/vela3.png' },
-  { id: 15,  name: 'Votiva Amarela',          category: 'casa',   imgCategory: 'Iluminação Quente', src: '/produtos/vela15.png' },
-  { id: 161, name: 'Espectro de Cores',       category: 'casa',   imgCategory: 'Coleção Completa',  src: '/produtos/vela16.png' },
-  { id: 7,   name: 'Caixas de Lote',          category: 'evento', imgCategory: 'Atacado B2B',       src: '/produtos/vela7.png' },
-  { id: 2,   name: 'Maço Cilíndrico',         category: 'evento', imgCategory: 'Alta Duração',      src: '/produtos/vela2.png' },
-  { id: 10,  name: 'Maços Vermelhos',         category: 'evento', imgCategory: 'Cenografia',        src: '/produtos/vela10.png' },
-  { id: 11,  name: 'Coleção Cores',           category: 'evento', imgCategory: 'Decoração Eventos', src: '/produtos/vela11.png' },
-  { id: 16,  name: 'Espectro Completo',       category: 'evento', imgCategory: 'Kits Corporativos', src: '/produtos/vela16.png' },
-];
-
-const tabs = [
-  { id: 'casa',   title: 'Para sua Casa',       desc: 'Aconchego e design para seus ambientes.' },
-  { id: 'evento', title: 'Suas Celebrações',    desc: 'Decoradores e cenografia para eventos.' },
-  { id: 'fe',     title: 'Para sua Fé',         desc: 'Rituais, devoção e pureza litúrgica.' },
-];
-
 export default function Products() {
-  const [activeTab, setActiveTab] = useState('casa');
+  const [categories, setCategories] = useState([]);
+  const [products, setProducts] = useState([]);
+  const [activeTab, setActiveTab] = useState(null);
+  const [loading, setLoading] = useState(true);
+  
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [products, setProducts] = useState(FALLBACK_PRODUCTS);
+  
+  const { addToCart } = useCart();
   const { getWhatsAppLink } = useSiteContent();
 
-  // Busca do Supabase, usa fallback se vazio/erro
   useEffect(() => {
-    supabase
-      .from('gallery')
-      .select('*')
-      .order('created_at', { ascending: true })
-      .then(({ data, error }) => {
-        if (!error && data && data.length > 0) {
-          // Mapeia os campos do Supabase para o formato local
-          setProducts(data.map(item => ({
-            id: item.id,
-            name: item.name,
-            category: item.category,
-            imgCategory: item.img_category || '',
-            src: item.src,
-          })));
-        }
-        // Se erro ou vazio → mantém FALLBACK_PRODUCTS
-      });
+    fetchData();
   }, []);
 
-  const filteredProducts = products.filter(p => p.category === activeTab);
+  async function fetchData() {
+    setLoading(true);
+    try {
+      const [catRes, prodRes] = await Promise.all([
+        supabase.from('categories').select('*').order('name'),
+        supabase.from('products').select('*, categories(slug)').eq('is_active', true).order('created_at', { ascending: false })
+      ]);
+
+      if (catRes.data) {
+        setCategories(catRes.data);
+        if (catRes.data.length > 0) setActiveTab(catRes.data[0].id);
+      }
+      if (prodRes.data) setProducts(prodRes.data);
+    } catch (err) {
+      console.error('Erro ao buscar dados:', err);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const filteredProducts = products.filter(p => p.category_id === activeTab);
 
   // Bloqueia scroll quando lightbox aberto
   useEffect(() => {
@@ -67,6 +49,7 @@ export default function Products() {
     return () => { document.body.style.overflow = 'auto'; };
   }, [lightboxOpen]);
 
+  // Teclas de atalho para lightbox
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (!lightboxOpen) return;
@@ -98,74 +81,80 @@ export default function Products() {
             </motion.h2>
           </div>
 
-          {/* Abas */}
+          {/* Abas Dinâmicas */}
           <div className="flex flex-wrap justify-center gap-3 md:gap-6 mb-12">
-            {tabs.map((tab) => (
+            {categories.map((cat) => (
               <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
+                key={cat.id}
+                onClick={() => setActiveTab(cat.id)}
                 className={`px-6 py-3 rounded-full text-sm font-bold tracking-widest uppercase transition-all duration-300 ${
-                  activeTab === tab.id
+                  activeTab === cat.id
                     ? 'bg-wine text-white shadow-lg shadow-wine/30'
                     : 'bg-white text-brown/60 border border-wine/10 hover:bg-stone hover:text-wine'
                 }`}
               >
-                {tab.title}
+                {cat.name}
               </button>
             ))}
           </div>
 
-          <motion.div key={`desc-${activeTab}`} initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }}
-            className="text-center mb-10 text-brown/70 font-light"
-          >
-            {tabs.find(t => t.id === activeTab)?.desc}
-          </motion.div>
-
-          {/* Grid */}
-          <motion.div
-            key={`grid-${activeTab}`}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.5 }}
-            className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-8 mx-auto"
-          >
-            {filteredProducts.map((product, i) => (
-              <motion.div
-                key={product.id}
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: i * 0.05 }}
-                onClick={() => { setCurrentIndex(i); setLightboxOpen(true); }}
-                className="group relative rounded-[2rem] overflow-hidden aspect-[4/5] cursor-pointer shadow-sm hover:shadow-[0_40px_80px_-20px_rgba(45,20,7,0.15)] transition-all duration-500 bg-white border border-wine/5"
-              >
-                <div className="absolute inset-0 z-0 overflow-hidden">
-                  <img
-                    src={product.src}
-                    alt={product.name}
-                    loading="lazy"
-                    decoding="async"
-                    className="w-full h-full object-cover scale-100 group-hover:scale-110 transition-transform duration-1000 ease-out"
-                  />
-                </div>
-                
-                {/* Overlay more elegant */}
-                <div className="absolute inset-0 z-10 bg-gradient-to-t from-[#0f0602]/90 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-all duration-500 flex flex-col justify-end p-6 md:p-8 translate-y-4 group-hover:translate-y-0">
-                  <p className="text-gold text-[10px] uppercase font-bold tracking-[0.2em] mb-2">{product.imgCategory}</p>
-                  <h3 className="text-white font-serif text-lg md:text-xl leading-tight">{product.name}</h3>
-                  <div className="h-0.5 bg-orange-500 w-0 group-hover:w-12 transition-all duration-500 mt-4 rounded-full" />
-                </div>
-
-                {/* Status indicator simple */}
-                <div className="absolute top-4 right-4 z-20 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <div className="bg-white/90 backdrop-blur-md p-2 rounded-full shadow-lg">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-3 h-3 text-brown">
-                      <path d="M12 5v14M5 12h14" />
-                    </svg>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
-          </motion.div>
+          {loading ? (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 animate-pulse">
+              {[1, 2, 3, 4].map(i => (
+                <div key={i} className="aspect-[4/5] bg-gray-200 rounded-[2rem]" />
+              ))}
+            </div>
+          ) : (
+            <motion.div
+              key={`grid-${activeTab}`}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.5 }}
+              className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-8 mx-auto"
+            >
+              {filteredProducts.length === 0 ? (
+                <div className="col-span-full py-20 text-center text-brown/40 italic">Nenhum produto nesta categoria no momento.</div>
+              ) : (
+                filteredProducts.map((product, i) => (
+                  <motion.div
+                    key={product.id}
+                    initial={{ opacity: 0, y: 30 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6, delay: i * 0.05 }}
+                    className="group relative rounded-[2rem] overflow-hidden aspect-[4/5] shadow-sm hover:shadow-[0_40px_80px_-20px_rgba(45,20,7,0.15)] transition-all duration-500 bg-white border border-wine/5"
+                  >
+                    <div className="absolute inset-0 z-0 overflow-hidden cursor-pointer" onClick={() => { setCurrentIndex(i); setLightboxOpen(true); }}>
+                      {product.images?.[0] ? (
+                        <img
+                          src={product.images[0]}
+                          alt={product.name}
+                          loading="lazy"
+                          className="w-full h-full object-cover scale-100 group-hover:scale-110 transition-transform duration-1000 ease-out"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center bg-gray-50 text-gray-200">
+                          <ShoppingBag size={48} />
+                        </div>
+                      )}
+                    </div>
+                    
+                    {/* Overlay */}
+                    <div className="absolute inset-0 z-10 bg-gradient-to-t from-[#0f0602]/90 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-all duration-500 flex flex-col justify-end p-6 pointer-events-none">
+                      <p className="text-gold text-[10px] uppercase font-bold tracking-[0.2em] mb-1">R$ {product.price.toFixed(2)}</p>
+                      <h3 className="text-white font-serif text-lg leading-tight mb-4">{product.name}</h3>
+                      
+                      <button 
+                        onClick={(e) => { e.stopPropagation(); addToCart(product); }}
+                        className="pointer-events-auto w-full bg-orange-500 hover:bg-orange-600 text-white text-[10px] font-bold uppercase tracking-widest py-3 rounded-xl transition-all flex items-center justify-center gap-2"
+                      >
+                        <Plus size={14} /> Adicionar
+                      </button>
+                    </div>
+                  </motion.div>
+                ))
+              )}
+            </motion.div>
+          )}
 
           {/* Banner B2B */}
           <motion.div
@@ -190,7 +179,7 @@ export default function Products() {
         </div>
       </section>
 
-      {/* Lightbox */}
+      {/* Lightbox Refatorado */}
       <AnimatePresence>
         {lightboxOpen && (
           <motion.div
@@ -204,6 +193,7 @@ export default function Products() {
             <div className="absolute top-8 left-8 md:top-10 md:left-10 z-[110] text-white font-sans tracking-widest text-sm font-bold bg-black/50 px-4 py-2 rounded-lg border border-white/10">
               <span className="text-gold">{currentIndex + 1}</span> / {filteredProducts.length}
             </div>
+            
             <button onClick={(e) => { e.stopPropagation(); setCurrentIndex(prev => (prev - 1 + filteredProducts.length) % filteredProducts.length); }}
               className="absolute left-2 md:left-10 top-1/2 -translate-y-1/2 z-[110] text-white/50 hover:text-gold bg-black/50 hover:bg-black/80 p-3 md:p-5 rounded-full transition-all">
               <ChevronLeft size={40} />
@@ -212,24 +202,37 @@ export default function Products() {
               className="absolute right-2 md:right-10 top-1/2 -translate-y-1/2 z-[110] text-white/50 hover:text-gold bg-black/50 hover:bg-black/80 p-3 md:p-5 rounded-full transition-all">
               <ChevronRight size={40} />
             </button>
-            <div className="w-full h-full max-w-6xl mx-auto px-6 md:px-16 py-20 md:py-24 flex flex-col items-center justify-center pointer-events-none">
-              <motion.img
+
+            <div className="w-full h-full max-w-6xl mx-auto px-6 md:px-16 py-20 md:py-24 flex flex-col md:flex-row items-center justify-center gap-12">
+              <motion.div 
                 key={currentIndex}
-                initial={{ opacity: 0, scale: 0.9, filter: 'blur(10px)' }}
-                animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
-                transition={{ duration: 0.4 }}
-                src={filteredProducts[currentIndex].src}
-                alt={filteredProducts[currentIndex].name}
-                className="w-full h-[60vh] md:h-[75vh] object-contain shadow-[0_0_50px_rgba(0,0,0,0.8)] rounded-md border border-white/5 pointer-events-auto"
-              />
-              <motion.div
-                key={`desc-${currentIndex}`}
-                initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.2 }}
-                className="mt-8 text-center bg-black/40 px-6 py-3 rounded-full backdrop-blur-md"
+                initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
+                className="w-full md:w-1/2 h-[50vh] md:h-[70vh] flex items-center justify-center"
               >
-                <h3 className="text-white font-serif text-xl md:text-3xl">{filteredProducts[currentIndex].name}</h3>
-                <p className="text-gold tracking-widest uppercase font-bold text-[10px] mt-2">{filteredProducts[currentIndex].imgCategory}</p>
+                <img
+                  src={filteredProducts[currentIndex].images?.[0]}
+                  alt={filteredProducts[currentIndex].name}
+                  className="max-w-full max-h-full object-contain drop-shadow-2xl"
+                />
               </motion.div>
+
+              <div className="w-full md:w-1/3 text-center md:text-left space-y-6">
+                <div>
+                  <p className="text-gold tracking-[0.3em] uppercase font-bold text-[10px] mb-2">Detalhes do Produto</p>
+                  <h3 className="text-white font-serif text-3xl md:text-5xl mb-4">{filteredProducts[currentIndex].name}</h3>
+                  <p className="text-white/60 text-lg font-light leading-relaxed">{filteredProducts[currentIndex].description}</p>
+                </div>
+                
+                <div className="pt-6 border-t border-white/10 flex flex-col items-center md:items-start gap-6">
+                  <div className="text-4xl font-sans font-bold text-white">R$ {filteredProducts[currentIndex].price.toFixed(2)}</div>
+                  <button 
+                    onClick={() => { addToCart(filteredProducts[currentIndex]); setLightboxOpen(false); }}
+                    className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold uppercase tracking-widest text-xs py-5 rounded-2xl transition-all flex items-center justify-center gap-3 shadow-xl shadow-orange-500/20 pointer-events-auto"
+                  >
+                    <ShoppingBag size={18} /> Adicionar ao Carrinho
+                  </button>
+                </div>
+              </div>
             </div>
           </motion.div>
         )}

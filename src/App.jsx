@@ -100,6 +100,7 @@ function PublicSite() {
   return (
     <div className="font-sans antialiased text-gray-900 bg-white selection:bg-gold selection:text-brown">
       <Navbar />
+      <CartDrawer />
       <main>
         <Hero />
         <SocialProof />

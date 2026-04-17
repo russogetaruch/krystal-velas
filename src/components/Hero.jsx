@@ -98,7 +98,7 @@ export default function Hero() {
             href="#produtos" 
             className="bg-white/5 hover:bg-white/10 text-white border border-white/10 backdrop-blur-md font-bold uppercase tracking-[0.15em] text-xs py-5 px-12 rounded-full transition-all flex justify-center items-center"
           >
-            Ver Coleções
+            Ver Loja Online
           </a>
         </motion.div>
       </motion.div>

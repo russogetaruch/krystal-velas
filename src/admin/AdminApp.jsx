@@ -6,11 +6,15 @@ import AdminTestimonials from './AdminTestimonials';
 import AdminContent from './AdminContent';
 import AdminUsers from './AdminUsers';
 import AdminLogs from './AdminLogs';
-import { LayoutDashboard, Images, MessageSquare, FileText, LogOut, Menu, X, Sun, Moon, ExternalLink, Shield, UserCog, Lock, Activity } from 'lucide-react';
+import AdminProducts from './AdminProducts';
+import AdminCategories from './AdminCategories';
+import { LayoutDashboard, Images, MessageSquare, FileText, LogOut, Menu, X, Sun, Moon, ExternalLink, Shield, UserCog, Lock, Activity, ShoppingBag, Tag } from 'lucide-react';
 
 const NAV = [
   { id: 'dashboard',    label: 'Dashboard',    icon: LayoutDashboard },
-  { id: 'gallery',      label: 'Galeria',      icon: Images },
+  { id: 'products',     label: 'Produtos',     icon: ShoppingBag },
+  { id: 'categories',   label: 'Categorias',   icon: Tag },
+  { id: 'gallery',      label: 'Fotos Vitrine', icon: Images },
   { id: 'testimonials', label: 'Depoimentos',  icon: MessageSquare },
   { id: 'content',      label: 'Conteúdo',     icon: FileText },
   { id: 'logs',         label: 'Logs',         icon: Activity, superOnly: true },
@@ -122,6 +126,8 @@ export default function AdminApp({ session, onLogout }) {
       case 'gallery':      return <AdminGallery />;
       case 'testimonials': return <AdminTestimonials />;
       case 'content':      return <AdminContent />;
+      case 'products':     return <AdminProducts />;
+      case 'categories':   return <AdminCategories />;
       case 'users':        return <AdminUsers currentUser={profile} />;
       case 'logs':         return <AdminLogs />;
       default:             return <AdminDashboard onNavigate={navigate} />;

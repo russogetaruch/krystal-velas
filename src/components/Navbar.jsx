@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
-import { Menu, X } from 'lucide-react';
+import { Menu, X, ShoppingBag } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useCart } from '../context/CartContext';
 
 // Navega até a seção com scroll suave e URL limpa (sem hash)
 const scrollToSection = (id, closeMobileMenu) => {
@@ -16,6 +16,7 @@ const scrollToSection = (id, closeMobileMenu) => {
 export default function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { itemsCount, setIsCartOpen } = useCart();
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 20);
@@ -26,7 +27,7 @@ export default function Navbar() {
   const navItems = [
     { name: 'A Fábrica', id: 'fabrica' },
     { name: 'Diferenciais', id: 'diferenciais' },
-    { name: 'Produtos', id: 'produtos' },
+    { name: 'Loja Online', id: 'produtos' },
     { name: 'Dúvidas', id: 'duvidas' },
     { name: 'Contato', id: 'contato' }
   ];
@@ -65,18 +66,33 @@ export default function Navbar() {
           ))}
         </nav>
 
-        {/* Mobile Toggle */}
-        <button
-          className="md:hidden"
-          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          aria-label="Abrir Menu"
-          aria-expanded={mobileMenuOpen}
-        >
-          {mobileMenuOpen 
-            ? <X size={28} className="text-white" /> 
-            : <Menu size={28} className={`text-white transition-all ${!isScrolled && 'drop-shadow-lg'}`} />
-          }
-        </button>
+        {/* Actions */}
+        <div className="flex items-center gap-4">
+          <button 
+            onClick={() => setIsCartOpen(true)}
+            className={`relative p-2 rounded-full transition-all duration-300 ${isScrolled ? 'text-white hover:bg-white/10' : 'text-white hover:bg-white/20'}`}
+          >
+            <ShoppingBag size={24} className={!isScrolled ? 'drop-shadow-lg' : ''} />
+            {itemsCount > 0 && (
+              <span className="absolute top-1 right-1 bg-orange-500 text-white text-[10px] font-bold w-4 h-4 flex items-center justify-center rounded-full border border-white/20">
+                {itemsCount}
+              </span>
+            )}
+          </button>
+
+          {/* Mobile Toggle */}
+          <button
+            className="md:hidden"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            aria-label="Abrir Menu"
+            aria-expanded={mobileMenuOpen}
+          >
+            {mobileMenuOpen 
+              ? <X size={28} className="text-white" /> 
+              : <Menu size={28} className={`text-white transition-all ${!isScrolled && 'drop-shadow-lg'}`} />
+            }
+          </button>
+        </div>
       </div>
 
       {/* Mobile Nav */}
