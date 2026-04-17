@@ -12,7 +12,6 @@ import Footer from './components/Footer';
 import CookieBanner from './components/CookieBanner';
 import MaintenancePage from './components/MaintenancePage';
 import FloatingWhatsApp from './components/FloatingWhatsApp';
-import CartDrawer from './components/CartDrawer';
 import { useContent } from './context/ContentContext';
 
 // Error Boundary Simple
@@ -40,14 +39,17 @@ class ErrorBoundary extends Component {
   }
 }
 
-// Admin carregado somente quando necessário (lazy)
+// Lazy Loads
 const AdminApp   = lazy(() => import('./admin/AdminApp'));
 const AdminLogin = lazy(() => import('./admin/AdminLogin'));
 const AdminSetup = lazy(() => import('./admin/AdminSetup'));
+const StorePage  = lazy(() => import('./pages/StorePage'));
 
-const isAdminRoute = window.location.pathname.startsWith('/admin');
+const pathname = window.location.pathname;
+const isAdminRoute = pathname.startsWith('/admin');
+const isStoreRoute = pathname === '/loja' || pathname.startsWith('/loja/');
 
-// ── Admin ────────────────────────────────────────────────────────────────────
+// ── Admin Root ──────────────────────────────────────────────────────────────
 function AdminRoot() {
   const [session, setSession] = useState(undefined);
   const [isSetup, setIsSetup] = useState(window.location.hash === '#/setup');
@@ -66,19 +68,18 @@ function AdminRoot() {
 
   if (session === undefined) {
     return (
-      <div className="min-h-screen bg-[#0f0602] flex items-center justify-center">
-        <div className="text-white/30 text-sm animate-pulse">Verificando sessão...</div>
+      <div className="min-h-screen bg-[#0f0602] flex items-center justify-center text-white/30 text-sm animate-pulse">
+        Verificando sessão...
       </div>
     );
   }
 
   if (isSetup && !session) return <AdminSetup onBack={() => window.location.hash = ''} />;
   if (!session) return <AdminLogin onLogin={setSession} />;
-  
   return <AdminApp session={session} onLogout={() => setSession(null)} />;
 }
 
-// ── Site Público ─────────────────────────────────────────────────────────────
+// ── Landing Page (PublicSite) ────────────────────────────────────────────────
 function PublicSite() {
   const { content, loading } = useContent();
 
@@ -94,20 +95,31 @@ function PublicSite() {
   const until = content?.maintenance_until;
   const isStillInMaintenance = isMaintenanceOn && (!until || new Date(until).getTime() > Date.now());
 
-  if (isStillInMaintenance) {
-    return <MaintenancePage until={until} />;
-  }
+  if (isStillInMaintenance) return <MaintenancePage until={until} />;
 
   return (
-    <div className="font-sans antialiased text-gray-900 bg-white selection:bg-gold selection:text-brown">
+    <div className="font-sans antialiased text-gray-900 bg-white">
       <Navbar />
-      <CartDrawer />
       <main>
         <Hero />
         <SocialProof />
         <Tradition />
         <Differentials />
-        <Products />
+        
+        {/* Banner CTA Loja */}
+        <section className="py-24 bg-brown text-white text-center relative overflow-hidden">
+          <div className="max-w-4xl mx-auto px-6 relative z-10">
+            <h2 className="font-serif text-4xl md:text-6xl mb-8">Nossa Coleção Agora Online.</h2>
+            <p className="text-white/60 mb-12 text-lg md:text-xl font-light">
+              Explore cada aroma e detalhe de nossas velas artesanais em nossa nova loja online exclusiva.
+            </p>
+            <a href="/loja" className="bg-orange-500 hover:bg-white hover:text-brown text-white font-bold uppercase tracking-widest text-sm py-5 px-16 rounded-full transition-all inline-block shadow-2xl">
+              Acessar Loja Online
+            </a>
+          </div>
+          <div className="absolute top-0 right-0 w-96 h-96 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2 blur-[100px]" />
+        </section>
+
         <Testimonials />
         <FAQ />
       </main>
@@ -118,16 +130,26 @@ function PublicSite() {
   );
 }
 
-// ── Root ─────────────────────────────────────────────────────────────────────
+// ── Store Site ──────────────────────────────────────────────────────────────
+function StoreSite() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center py-20 animate-pulse text-gray-300">Carregando Loja...</div>}>
+      <StorePage />
+      <FloatingWhatsApp />
+    </Suspense>
+  );
+}
+
+// ── Main App ─────────────────────────────────────────────────────────────────
 export default function App() {
   return (
     <ErrorBoundary>
       <Suspense fallback={
         <div className="min-h-screen bg-[#0f0602] flex items-center justify-center">
-          <div className="text-white/30 animate-pulse text-sm">Carregando...</div>
+          <div className="text-white/30 animate-pulse text-sm font-bold tracking-widest uppercase">Krystal Velas...</div>
         </div>
       }>
-        {isAdminRoute ? <AdminRoot /> : <PublicSite />}
+        {isAdminRoute ? <AdminRoot /> : (isStoreRoute ? <StoreSite /> : <PublicSite />)}
       </Suspense>
     </ErrorBoundary>
   );
