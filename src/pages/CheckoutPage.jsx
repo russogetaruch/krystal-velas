@@ -34,6 +34,7 @@ export default function CheckoutPage() {
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
+  const [formData, setFormData] = useState({
     name: '',
     email: '',
     phone: '',
