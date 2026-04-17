@@ -1,4 +1,5 @@
 import { useState, useEffect, lazy, Suspense, Component } from 'react';
+import { HelmetProvider } from 'react-helmet-async';
 import { supabase } from './lib/supabase';
 import Navbar from './components/Navbar';
 import Hero from './components/Hero';
@@ -12,6 +13,7 @@ import Footer from './components/Footer';
 import CookieBanner from './components/CookieBanner';
 import MaintenancePage from './components/MaintenancePage';
 import FloatingWhatsApp from './components/FloatingWhatsApp';
+import SEO from './components/SEO';
 import { useContent } from './context/ContentContext';
 
 // Error Boundary Simple
@@ -101,6 +103,7 @@ function PublicSite() {
 
   return (
     <div className="font-sans antialiased text-gray-900 bg-white">
+      <SEO />
       <Navbar />
       <main>
         <Hero />

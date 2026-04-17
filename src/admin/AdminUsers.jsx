@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import { motion } from 'framer-motion';
 import { UserPlus, Shield, ShieldAlert, Trash2, Mail, Calendar, Lock, Plus, X } from 'lucide-react';

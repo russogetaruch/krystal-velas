@@ -1,10 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import { Plus, Trash2, Edit2, Save, X, Tag } from 'lucide-react';
+import { logAudit } from './adminUtils';
 
-export default function AdminCategories() {
+export default function AdminCategories({ session }) {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [newCat, setNewCat] = useState({ name: '', description: '' });
   const [editingId, setEditingId] = useState(null);
   const [editForm, setEditForm] = useState({ name: '', description: '' });
@@ -15,8 +17,14 @@ export default function AdminCategories() {
 
   async function fetchCategories() {
     setLoading(true);
+    setError(null);
     const { data, error } = await supabase.from('categories').select('*').order('name');
-    if (!error) setCategories(data);
+    if (error) {
+      setError('Erro ao carregar categorias. Verifique sua conexão ou permissões.');
+      console.error(error);
+    } else {
+      setCategories(data);
+    }
     setLoading(false);
   }
 
@@ -26,6 +34,7 @@ export default function AdminCategories() {
     const slug = newCat.name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^\w ]+/g,'').replace(/ +/g,'-');
     const { error } = await supabase.from('categories').insert([{ ...newCat, slug }]);
     if (!error) {
+      await logAudit(session, 'CATEGORY_CREATE', { name: newCat.name });
       setNewCat({ name: '', description: '' });
       fetchCategories();
     }
@@ -35,6 +44,7 @@ export default function AdminCategories() {
     const slug = editForm.name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^\w ]+/g,'').replace(/ +/g,'-');
     const { error } = await supabase.from('categories').update({ ...editForm, slug }).eq('id', id);
     if (!error) {
+      await logAudit(session, 'CATEGORY_UPDATE', { name: editForm.name, id });
       setEditingId(null);
       fetchCategories();
     }
@@ -43,7 +53,10 @@ export default function AdminCategories() {
   const handleDelete = async (id) => {
     if (!confirm('Excluir esta categoria? Isso pode afetar produtos vinculados.')) return;
     const { error } = await supabase.from('categories').delete().eq('id', id);
-    if (!error) fetchCategories();
+    if (!error) {
+      await logAudit(session, 'CATEGORY_DELETE', { id });
+      fetchCategories();
+    }
   };
 
   if (loading) return <div className="animate-pulse text-gray-400 text-xs text-center py-20">Lendo categorias...</div>;
@@ -54,6 +67,13 @@ export default function AdminCategories() {
         <h2 className="text-2xl font-serif text-gray-900 dark:text-white">Categorias</h2>
         <p className="text-gray-500 dark:text-white/40 text-sm">Organize suas velas por tipo ou uso.</p>
       </div>
+
+      {error && (
+        <div className="bg-red-50 border border-red-100 p-4 rounded-xl text-red-600 text-xs flex items-center gap-2">
+          <span>⚠️ {error}</span>
+          <button onClick={fetchCategories} className="ml-auto underline font-bold uppercase">Tentar novamente</button>
+        </div>
+      )}
 
       <div className="grid lg:grid-cols-3 gap-8">
         {/* Nova Categoria */}

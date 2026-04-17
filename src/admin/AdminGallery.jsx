@@ -1,7 +1,9 @@
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import imageCompression from 'browser-image-compression';
 import { Upload, X, CheckCircle, AlertCircle, ImagePlus, Trash2, RefreshCw, Pencil, Save } from 'lucide-react';
 import DOMPurify from 'dompurify';
+import { logAudit } from './adminUtils';
 
 const ALLOWED_TYPES = ['image/webp', 'image/png', 'image/jpeg', 'image/jpg'];
 const MAX_SIZE_MB = 3;
@@ -13,13 +15,14 @@ const CATEGORIES = [
 ];
 
 // ─── Modal de edição ───────────────────────────────────────────────────────────
-function EditModal({ item, onClose, onSaved }) {
+function EditModal({ item, onClose, onSaved, session }) {
   const [name, setName]           = useState(item.name);
   const [category, setCategory]   = useState(item.category);
   const [imgCategory, setImgCategory] = useState(item.img_category || '');
   const [newFile, setNewFile]     = useState(null);
   const [preview, setPreview]     = useState(item.src);
   const [saving, setSaving]       = useState(false);
+  const [compressing, setCompressing] = useState(false);
   const [error, setError]         = useState(null);
   const inputRef = useRef();
 
@@ -68,6 +71,7 @@ function EditModal({ item, onClose, onSaved }) {
       }).eq('id', item.id);
 
       if (dbErr) throw new Error(dbErr.message);
+      await logAudit(session, 'GALLERY_UPDATE', { name: item.name, id: item.id });
       onSaved();
       onClose();
     } catch (err) {
@@ -177,7 +181,7 @@ function EditModal({ item, onClose, onSaved }) {
 }
 
 // ─── Componente principal ──────────────────────────────────────────────────────
-export default function AdminGallery() {
+export default function AdminGallery({ session }) {
   const [dragging, setDragging]       = useState(false);
   const [preview, setPreview]         = useState(null);
   const [file, setFile]               = useState(null);
@@ -256,6 +260,7 @@ export default function AdminGallery() {
       await supabase.storage.from('gallery').remove([item.storage_path]);
     }
     await supabase.from('gallery').delete().eq('id', item.id);
+    await logAudit(session, 'GALLERY_DELETE', { name: item.name, id: item.id });
     setGallery(prev => prev.filter(g => g.id !== item.id));
   };
 
@@ -269,6 +274,7 @@ export default function AdminGallery() {
           item={editingItem}
           onClose={() => setEditingItem(null)}
           onSaved={loadGallery}
+          session={session}
         />
       )}
 

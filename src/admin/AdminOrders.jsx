@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import { 
   Package, 
@@ -14,18 +14,24 @@ import {
   Calendar,
   Mail,
   Phone,
-  FileText
+  FileText,
+  Copy,
+  Check
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { logAudit } from './adminUtils';
 
-export default function AdminOrders() {
+export default function AdminOrders({ session }) {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
+  const [filterDate, setFilterDate] = useState('all');
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [items, setItems] = useState([]);
   const [itemsLoading, setItemsLoading] = useState(false);
+  const [copiedId, setCopiedId] = useState(null);
 
   useEffect(() => {
     fetchOrders();
@@ -33,16 +39,20 @@ export default function AdminOrders() {
 
   async function fetchOrders() {
     setLoading(true);
+    setError(null);
     try {
       const { data, error } = await supabase
         .from('orders')
-        .select('*')
+        .select(`
+          *,
+          order_items (*)
+        `)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
       setOrders(data || []);
     } catch (err) {
-      console.error('Erro ao buscar pedidos:', err);
+      setError('Erro ao carregar vendas. Verifique sua conexão.');
     } finally {
       setLoading(false);
     }
@@ -78,16 +88,40 @@ export default function AdminOrders() {
       setOrders(orders.map(o => o.id === orderId ? { ...o, status: newStatus } : o));
       if (selectedOrder?.id === orderId) setSelectedOrder({ ...selectedOrder, status: newStatus });
       
+      await logAudit(session, 'ORDER_STATUS_CHANGE', { order_id: orderId, status: newStatus });
     } catch (err) {
       alert('Erro ao atualizar status');
     }
   }
 
+  const copyToClipboard = (id) => {
+    navigator.clipboard.writeText(id);
+    setCopiedId(id);
+    setTimeout(() => setCopiedId(null), 2000);
+  };
+
   const filteredOrders = orders.filter(o => {
-    const matchesSearch = o.customer_name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                          o.id.includes(searchTerm);
+    const matchesSearch = (o.customer_name || '').toLowerCase().includes(searchTerm.toLowerCase()) || 
+                          (o.id || '').includes(searchTerm);
     const matchesStatus = filterStatus === 'all' || o.status === filterStatus;
-    return matchesSearch && matchesStatus;
+    
+    // Filtro de Data
+    let matchesDate = true;
+    if (o.created_at) {
+      const orderDate = new Date(o.created_at);
+      const now = new Date();
+      if (filterDate === 'today') {
+        matchesDate = orderDate.toDateString() === now.toDateString();
+      } else if (filterDate === 'week') {
+        const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        matchesDate = orderDate >= weekAgo;
+      } else if (filterDate === 'month') {
+        const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+        matchesDate = orderDate >= monthAgo;
+      }
+    }
+
+    return matchesSearch && matchesStatus && matchesDate;
   });
 
   const getStatusInfo = (status) => {
@@ -121,11 +155,22 @@ export default function AdminOrders() {
             onChange={e => setFilterStatus(e.target.value)}
             className="bg-gray-50 dark:bg-white/5 border border-transparent focus:border-orange-500 rounded-xl px-4 py-2.5 text-sm dark:text-gray-200"
           >
-            <option value="all">Todos os Status</option>
+            <option value="all">Todos Status</option>
             <option value="pending">Pendentes</option>
             <option value="paid">Pagos</option>
             <option value="shipped">Enviados</option>
             <option value="cancelled">Cancelados</option>
+          </select>
+
+          <select 
+            value={filterDate}
+            onChange={e => setFilterDate(e.target.value)}
+            className="bg-gray-50 dark:bg-white/5 border border-transparent focus:border-orange-500 rounded-xl px-4 py-2.5 text-sm dark:text-gray-200"
+          >
+            <option value="all">Qualquer Data</option>
+            <option value="today">Hoje</option>
+            <option value="week">Últimos 7 dias</option>
+            <option value="month">Últimos 30 dias</option>
           </select>
           <button 
             onClick={fetchOrders}
@@ -135,6 +180,13 @@ export default function AdminOrders() {
           </button>
         </div>
       </div>
+
+      {error && (
+        <div className="bg-red-50 border border-red-100 p-4 rounded-xl text-red-600 text-xs flex items-center justify-between">
+          <span>⚠️ {error}</span>
+          <button onClick={fetchOrders} className="underline font-bold uppercase">Tentar novamente</button>
+        </div>
+      )}
 
       {/* Lista de Pedidos */}
       <div className="bg-white dark:bg-white/5 rounded-2xl border border-gray-100 dark:border-white/5 shadow-sm overflow-hidden">
@@ -169,9 +221,17 @@ export default function AdminOrders() {
                       }}
                     >
                       <td className="px-6 py-4">
-                        <span className="font-mono text-xs text-orange-500 font-bold uppercase tracking-tighter">
-                          #{order.id.slice(0, 8)}
-                        </span>
+                        <div className="flex items-center gap-2 group/id">
+                          <span className="font-mono text-xs text-orange-500 font-bold uppercase tracking-tighter">
+                            #{order.id.slice(0, 8)}
+                          </span>
+                          <button 
+                            onClick={(e) => { e.stopPropagation(); copyToClipboard(order.id); }}
+                            className="opacity-0 group-hover/id:opacity-100 p-1 hover:bg-gray-100 rounded transition-all"
+                          >
+                            {copiedId === order.id ? <Check size={10} className="text-green-500" /> : <Copy size={10} className="text-gray-400" />}
+                          </button>
+                        </div>
                       </td>
                       <td className="px-6 py-4">
                         <div>

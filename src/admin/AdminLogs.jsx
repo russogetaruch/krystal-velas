@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import { motion } from 'framer-motion';
 import { Shield, ShieldAlert, Clock, Search, Filter, Trash2, Calendar, AlertTriangle } from 'lucide-react';

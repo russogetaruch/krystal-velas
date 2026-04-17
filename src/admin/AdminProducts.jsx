@@ -1,15 +1,19 @@
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import imageCompression from 'browser-image-compression';
-import { Plus, Trash2, Edit2, Save, X, Package, Search, Filter, ImagePlus, Upload, AlertCircle, ShoppingCart, RefreshCw } from 'lucide-react';
+import { Plus, Trash2, Edit2, Save, X, Package, Search, Filter, ImagePlus, Upload, AlertCircle, ShoppingCart, RefreshCw, AlertTriangle } from 'lucide-react';
 import DOMPurify from 'dompurify';
+import { logAudit, cleanupStorage } from './adminUtils';
 
 const ALLOWED_TYPES = ['image/webp', 'image/png', 'image/jpeg', 'image/jpg'];
 const MAX_SIZE_MB = 10;
 
-export default function AdminProducts() {
+export default function AdminProducts({ session }) {
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
+  
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
   
@@ -21,6 +25,7 @@ export default function AdminProducts() {
     price: '',
     stock: '',
     is_active: true,
+    is_featured: false,
     images: []
   });
   
@@ -38,14 +43,24 @@ export default function AdminProducts() {
 
   async function fetchData() {
     setLoading(true);
-    const [prodRes, catRes] = await Promise.all([
-      supabase.from('products').select('*, categories(name)').order('created_at', { ascending: false }),
-      supabase.from('categories').select('*').order('name')
-    ]);
-    
-    if (prodRes.data) setProducts(prodRes.data);
-    if (catRes.data) setCategories(catRes.data);
-    setLoading(false);
+    setError(null);
+    try {
+      const [prodRes, catRes] = await Promise.all([
+        supabase.from('products').select('*, categories(name)').order('created_at', { ascending: false }),
+        supabase.from('categories').select('*').order('name')
+      ]);
+      
+      if (prodRes.error) throw prodRes.error;
+      if (catRes.error) throw catRes.error;
+
+      setProducts(prodRes.data || []);
+      setCategories(catRes.data || []);
+    } catch (err) {
+      setError('Erro ao carregar vitrine. Verifique RLS ou conexão.');
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
   }
 
   const handleOpenModal = (item = null) => {
@@ -58,6 +73,7 @@ export default function AdminProducts() {
         price: item.price.toString(),
         stock: item.stock?.toString() || '0',
         is_active: item.is_active,
+        is_featured: item.is_featured || false,
         images: item.images || []
       });
     } else {
@@ -69,6 +85,7 @@ export default function AdminProducts() {
         price: '',
         stock: '0',
         is_active: true,
+        is_featured: false,
         images: []
       });
     }
@@ -155,6 +172,7 @@ export default function AdminProducts() {
       price: parseFloat(form.price),
       stock: parseInt(form.stock),
       is_active: form.is_active,
+      is_featured: form.is_featured,
       images: form.images
     };
 
@@ -169,15 +187,42 @@ export default function AdminProducts() {
       setError('Erro ao salvar: ' + res.error.message);
       setLoading(false);
     } else {
+      await logAudit(session, editingItem ? 'PRODUCT_UPDATE' : 'PRODUCT_CREATE', { 
+        name: payload.name, 
+        price: payload.price,
+        id: editingItem?.id 
+      });
       setIsModalOpen(false);
       fetchData();
     }
   };
 
   const handleDelete = async (id) => {
-    if (!confirm('Remover este produto permanentemente?')) return;
-    const { error } = await supabase.from('products').delete().eq('id', id);
-    if (!error) fetchData();
+    const productToDelete = products.find(p => p.id === id);
+    if (!productToDelete) return;
+
+    if (!confirm(`Remover "${productToDelete.name}" permanentemente?`)) return;
+    
+    setLoading(true);
+    try {
+      // 1. Limpa Storage
+      if (productToDelete.images && productToDelete.images.length > 0) {
+        await cleanupStorage(productToDelete.images);
+      }
+
+      // 2. Deleta do DB
+      const { error } = await supabase.from('products').delete().eq('id', id);
+      if (error) throw error;
+
+      // 3. Log
+      await logAudit(session, 'PRODUCT_DELETE', { name: productToDelete.name, id });
+      
+      fetchData();
+    } catch (err) {
+      setError('Erro ao deletar: ' + err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const filteredProducts = products.filter(p => {
@@ -188,6 +233,15 @@ export default function AdminProducts() {
 
   return (
     <div className="space-y-8">
+      {error && (
+        <div className="bg-red-50 border border-red-100 p-4 rounded-2xl text-red-600 text-xs flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <AlertCircle size={14} /> <span>{error}</span>
+          </div>
+          <button onClick={fetchData} className="underline font-bold uppercase">Tentar novamente</button>
+        </div>
+      )}
+
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h2 className="text-2xl font-serif text-gray-900 dark:text-white">Gestão de Produtos</h2>
@@ -256,10 +310,17 @@ export default function AdminProducts() {
               <h3 className="font-serif text-brown dark:text-white mb-2 truncate">{p.name}</h3>
               <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-50 dark:border-white/5">
                 <div className="flex items-center gap-1.5">
-                  <Package size={12} className="text-gray-400" />
-                  <span className="text-[10px] text-gray-500 uppercase font-bold">{p.stock} em estoque</span>
+                  <Package size={12} className={p.stock < 5 ? "text-red-500" : "text-gray-400"} />
+                  <span className={`text-[10px] uppercase font-bold ${p.stock < 5 ? 'text-red-500 animate-pulse' : 'text-gray-500'}`}>
+                    {p.stock} em estoque
+                  </span>
                 </div>
-                {p.is_active && <div className="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]" />}
+                {p.stock < 5 && p.is_active && (
+                   <div className="flex items-center gap-1 text-[8px] bg-red-50 dark:bg-red-500/10 text-red-600 px-2 py-0.5 rounded-full font-bold uppercase border border-red-100 dark:border-red-500/20">
+                     <AlertTriangle size={8} /> Repor
+                   </div>
+                )}
+                {p.is_active && p.stock >= 5 && <div className="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]" />}
               </div>
             </div>
           </div>
@@ -354,9 +415,17 @@ export default function AdminProducts() {
                   <textarea value={form.description} onChange={e => setForm({...form, description: e.target.value})} className="w-full bg-gray-50 dark:bg-white/5 border border-transparent focus:border-orange-500 rounded-xl px-4 py-3 h-24 resize-none dark:text-white" />
                 </div>
                 
-                <div className="flex items-center gap-3">
-                  <input type="checkbox" id="active" checked={form.is_active} onChange={e => setForm({...form, is_active: e.target.checked})} className="w-4 h-4 rounded text-orange-500" />
-                  <label htmlFor="active" className="text-xs font-bold text-gray-500 uppercase tracking-widest">Produto Ativo na Vitrine</label>
+                <div className="flex flex-col gap-3">
+                  <div className="flex items-center gap-3">
+                    <input type="checkbox" id="active" checked={form.is_active} onChange={e => setForm({...form, is_active: e.target.checked})} className="w-4 h-4 rounded text-orange-500" />
+                    <label htmlFor="active" className="text-xs font-bold text-gray-500 uppercase tracking-widest">Produto Ativo na Vitrine</label>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <input type="checkbox" id="featured" checked={form.is_featured} onChange={e => setForm({...form, is_featured: e.target.checked})} className="w-4 h-4 rounded text-orange-500" />
+                    <label htmlFor="featured" className="text-xs font-bold text-orange-500 uppercase tracking-widest flex items-center gap-2">
+                       Destaque (Badge Especial)
+                    </label>
+                  </div>
                 </div>
               </div>
 

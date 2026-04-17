@@ -1,16 +1,39 @@
 import { useState, useEffect } from 'react';
 import { useCart } from '../context/CartContext';
 import { supabase } from '../lib/supabase';
-import { ArrowLeft, ShoppingBag, CreditCard, Ticket, CheckCircle2, ChevronRight, Truck } from 'lucide-react';
+import { ArrowLeft, ShoppingBag, CreditCard, Ticket, CheckCircle2, ChevronRight, Truck, MessageCircle, Copy, Check, Clock } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useContent } from '../context/ContentContext';
 
 export default function CheckoutPage() {
   const { cart, totalPrice, clearCart } = useCart();
+  const { content } = useContent(); 
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [orderId, setOrderId] = useState(null);
+  const [lastCart, setLastCart] = useState([]);
+  const [copied, setCopied] = useState(false);
+  const [timeLeft, setTimeLeft] = useState(900); // 15 minutos
 
-  const [formData, setFormData] = useState({
+  useEffect(() => {
+    if (success || !cart.length) return;
+    const timer = setInterval(() => {
+      setTimeLeft(prev => (prev > 0 ? prev - 1 : 0));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [success, cart.length]);
+
+  const formatTime = (seconds) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const handleCopyPix = () => {
+    navigator.clipboard.writeText(content.pix_key || 'Chave não configurada');
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
     name: '',
     email: '',
     phone: '',
@@ -84,6 +107,7 @@ export default function CheckoutPage() {
 
       // Sucesso!
       setOrderId(order.id);
+      setLastCart([...cart]); // Guarda o carrinho pras infos do zap
       setSuccess(true);
       clearCart();
     } catch (err) {
@@ -109,9 +133,62 @@ export default function CheckoutPage() {
           <p className="text-gray-500 mb-8 font-light text-sm">
             Obrigado pela sua compra. Seu pedido foi registrado com sucesso em nosso sistema.
           </p>
-          <div className="bg-gray-50 rounded-2xl p-4 mb-8 text-left">
+          <div className="bg-orange-50 border border-orange-100 rounded-2xl p-4 mb-6 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Clock className="text-orange-500 animate-pulse" size={20} />
+              <div className="text-left">
+                <p className="text-[10px] text-orange-400 font-bold uppercase tracking-widest">Reserva Expira em:</p>
+                <p className="text-lg font-mono font-bold text-orange-600">{formatTime(timeLeft)}</p>
+              </div>
+            </div>
+            <p className="text-[9px] text-orange-400 font-bold uppercase max-w-[100px] leading-tight">Itens reservados para você.</p>
+          </div>
+
+          <div className="bg-gray-50 rounded-2xl p-4 mb-4 text-left">
             <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-1">ID do Pedido</p>
             <p className="text-xs font-mono text-gray-600 truncate">{orderId}</p>
+          </div>
+
+          {/* PIX Copy section */}
+          <div className="bg-stone/20 rounded-2xl p-6 mb-6 text-left border border-wine/5">
+            <p className="text-xs font-bold text-brown mb-4 uppercase tracking-widest flex items-center gap-2">
+              <CreditCard size={14} className="text-orange-500" /> Pagamento via PIX
+            </p>
+            <div className="relative group">
+               <div className="bg-white border border-wine/10 rounded-xl p-4 font-mono text-xs text-gray-500 break-all pr-12">
+                 {content.pix_key || 'contato@krystalvelas.com.br'}
+               </div>
+               <button 
+                 onClick={handleCopyPix}
+                 className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-all active:scale-95"
+               >
+                 {copied ? <Check size={16} /> : <Copy size={16} />}
+               </button>
+            </div>
+            <p className="text-[10px] text-gray-400 mt-3 italic font-medium">
+              * Copie a chave acima e pague no seu app do banco favorito.
+            </p>
+          </div>
+
+          <div className="space-y-4 mb-8">
+            <p className="text-xs text-gray-400 font-bold uppercase tracking-widest">Próximo Passo:</p>
+            <a 
+              href={`https://wa.me/${content.whatsapp_number.replace(/\D/g, '')}?text=${encodeURIComponent(
+                `Olá! Acabei de realizar o pedido #${orderId.slice(0,8)} no site.\n\n` +
+                `*Itens:*\n${lastCart.map(i => `- ${i.quantity}x ${i.name}`).join('\n')}\n\n` +
+                `*Total:* R$ ${(totalPrice + shippingPrice).toFixed(2)}\n\n` +
+                `Gostaria de confirmar o pagamento e combinar a entrega.`
+              )}`}
+              target="_blank"
+              rel="noreferrer"
+              className="flex items-center justify-center gap-3 w-full bg-green-600 text-white py-4 rounded-xl font-bold uppercase tracking-widest text-xs hover:bg-green-700 transition-all shadow-lg shadow-green-600/20"
+            >
+              <MessageCircle size={18} />
+              Confirmar via WhatsApp
+            </a>
+            <p className="text-[9px] text-gray-400 uppercase font-bold tracking-tighter italic">
+              * Clique acima para enviar o comprovante e agilizar seu pedido.
+            </p>
           </div>
           <a 
             href="/"

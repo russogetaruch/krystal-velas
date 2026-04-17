@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, ChevronLeft, ChevronRight, ShoppingBag, Plus, Minus } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, ShoppingBag, Plus, Minus, Search, Star } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useCart } from '../context/CartContext';
 import { useSiteContent } from '../hooks/useSiteContent';
@@ -8,7 +8,8 @@ import { useSiteContent } from '../hooks/useSiteContent';
 export default function Products() {
   const [categories, setCategories] = useState([]);
   const [products, setProducts] = useState([]);
-  const [activeTab, setActiveTab] = useState(null);
+  const [activeTab, setActiveTab] = useState('all');
+  const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
   
   const [lightboxOpen, setLightboxOpen] = useState(false);
@@ -31,7 +32,6 @@ export default function Products() {
 
       if (catRes.data) {
         setCategories(catRes.data);
-        if (catRes.data.length > 0) setActiveTab(catRes.data[0].id);
       }
       if (prodRes.data) setProducts(prodRes.data);
     } catch (err) {
@@ -41,7 +41,12 @@ export default function Products() {
     }
   }
 
-  const filteredProducts = products.filter(p => p.category_id === activeTab);
+  const filteredProducts = products.filter(p => {
+    const matchesCategory = activeTab === 'all' || p.category_id === activeTab;
+    const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                          (p.description && p.description.toLowerCase().includes(searchTerm.toLowerCase()));
+    return matchesCategory && matchesSearch;
+  });
 
   // Bloqueia scroll quando lightbox aberto
   useEffect(() => {
@@ -81,16 +86,48 @@ export default function Products() {
             </motion.h2>
           </div>
 
+          {/* Search Bar Premium */}
+          <div className="max-w-xl mx-auto mb-12 relative group">
+            <div className="absolute inset-y-0 left-5 flex items-center pointer-events-none text-brown/30 group-focus-within:text-orange-500 transition-colors">
+              <Search size={18} />
+            </div>
+            <input
+              type="text"
+              placeholder="O que você está procurando hoje?"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full bg-white border border-wine/10 rounded-[1.5rem] py-5 pl-14 pr-6 text-sm text-brown placeholder:text-brown/30 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500/50 shadow-sm transition-all"
+            />
+            {searchTerm && (
+              <button 
+                onClick={() => setSearchTerm('')}
+                className="absolute inset-y-0 right-5 flex items-center text-brown/20 hover:text-brown transition-colors"
+              >
+                <X size={16} />
+              </button>
+            )}
+          </div>
+
           {/* Abas Dinâmicas */}
-          <div className="flex flex-wrap justify-center gap-3 md:gap-6 mb-12">
+          <div className="flex flex-wrap justify-center gap-2 md:gap-4 mb-16 px-4">
+            <button
+              onClick={() => setActiveTab('all')}
+              className={`px-8 py-3 rounded-2xl text-[10px] font-bold tracking-[0.2em] uppercase transition-all duration-500 border-2 ${
+                activeTab === 'all'
+                  ? 'bg-brown border-brown text-white shadow-2xl shadow-brown/20'
+                  : 'bg-white border-transparent text-brown/40 hover:text-brown hover:bg-stone/30'
+              }`}
+            >
+              Todos
+            </button>
             {categories.map((cat) => (
               <button
                 key={cat.id}
                 onClick={() => setActiveTab(cat.id)}
-                className={`px-6 py-3 rounded-full text-sm font-bold tracking-widest uppercase transition-all duration-300 ${
+                className={`px-8 py-3 rounded-2xl text-[10px] font-bold tracking-[0.2em] uppercase transition-all duration-500 border-2 ${
                   activeTab === cat.id
-                    ? 'bg-wine text-white shadow-lg shadow-wine/30'
-                    : 'bg-white text-brown/60 border border-wine/10 hover:bg-stone hover:text-wine'
+                    ? 'bg-brown border-brown text-white shadow-2xl shadow-brown/20'
+                    : 'bg-white border-transparent text-brown/40 hover:text-brown hover:bg-stone/30'
                 }`}
               >
                 {cat.name}
@@ -138,8 +175,7 @@ export default function Products() {
                       )}
                     </div>
                     
-                    {/* Overlay */}
-                    <div className="absolute inset-0 z-10 bg-gradient-to-t from-[#0f0602]/90 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-all duration-500 flex flex-col justify-end p-6 pointer-events-none">
+                    <div className="absolute inset-x-0 bottom-0 z-10 bg-gradient-to-t from-[#0f0602]/90 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-all duration-500 flex flex-col justify-end p-6 pointer-events-none">
                       <p className="text-gold text-[10px] uppercase font-bold tracking-[0.2em] mb-1">R$ {product.price.toFixed(2)}</p>
                       <h3 className="text-white font-serif text-lg leading-tight mb-4">{product.name}</h3>
                       
@@ -150,6 +186,14 @@ export default function Products() {
                         <Plus size={14} /> Adicionar
                       </button>
                     </div>
+
+                    {/* Featured Badge */}
+                    {product.is_featured && (
+                      <div className="absolute top-4 left-4 z-20 bg-orange-500 text-white text-[8px] font-bold uppercase tracking-[0.2em] px-3 py-1.5 rounded-full flex items-center gap-1.5 shadow-lg border border-white/10">
+                        <Star size={10} className="fill-white" />
+                        Destaque
+                      </div>
+                    )}
                   </motion.div>
                 ))
               )}

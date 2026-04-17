@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import DOMPurify from 'dompurify';
 import { Plus, Trash2, Eye, EyeOff, CheckCircle, AlertCircle, MessageSquare } from 'lucide-react';
+import { logAudit } from './adminUtils';
 
 const SOURCES = ['google', 'instagram', 'facebook', 'whatsapp'];
 
@@ -18,7 +19,7 @@ const SourceBadge = ({ source }) => (
   </span>
 );
 
-export default function AdminTestimonials() {
+export default function AdminTestimonials({ session }) {
   const [list, setList] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -54,6 +55,7 @@ export default function AdminTestimonials() {
         active: true,
       });
       if (error) throw new Error(error.message);
+      await logAudit(session, 'TESTIMONIAL_CREATE', { author: form.author });
       setMessage({ type: 'success', text: 'Depoimento publicado com sucesso!' });
       setForm({ author: '', role: '', location: '', quote: '', source: 'google', avatar_url: '' });
       setTimeout(() => setMessage(null), 3000);
@@ -67,12 +69,14 @@ export default function AdminTestimonials() {
 
   const toggleActive = async (item) => {
     await supabase.from('testimonials').update({ active: !item.active }).eq('id', item.id);
+    await logAudit(session, 'TESTIMONIAL_TOGGLE', { id: item.id, active: !item.active });
     setList(prev => prev.map(t => t.id === item.id ? { ...t, active: !t.active } : t));
   };
 
   const handleDelete = async (id) => {
     if (!confirm('Remover este depoimento?')) return;
     await supabase.from('testimonials').delete().eq('id', id);
+    await logAudit(session, 'TESTIMONIAL_DELETE', { id });
     setList(prev => prev.filter(t => t.id !== id));
   };
 

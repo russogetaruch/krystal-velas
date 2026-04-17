@@ -3,7 +3,21 @@
 @tailwind utilities;
 
 @layer base {
+  html {
+    scroll-behavior: smooth;
+  }
   body {
-    @apply bg-cream text-brown font-sans antialiased overflow-x-hidden;
+    @apply bg-[#faf9f6] text-brown font-sans antialiased overflow-x-hidden;
+  }
+  
+  /* Premium Scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-orange-500/20 rounded-full hover:bg-orange-500/40 transition-colors;
   }
 }

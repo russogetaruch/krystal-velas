@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import AdminDashboard from './AdminDashboard';
 import AdminGallery from './AdminGallery';
@@ -9,7 +9,7 @@ import AdminLogs from './AdminLogs';
 import AdminProducts from './AdminProducts';
 import AdminCategories from './AdminCategories';
 import AdminOrders from './AdminOrders';
-import { LayoutDashboard, Images, MessageSquare, FileText, LogOut, Menu, X, Sun, Moon, ExternalLink, Shield, UserCog, Lock, Activity, ShoppingBag, Tag, ShoppingCart } from 'lucide-react';
+import { LayoutDashboard, Images, MessageSquare, FileText, LogOut, Menu, X, Sun, Moon, ExternalLink, Shield, UserCog, Lock, Activity, ShoppingBag, Tag, ShoppingCart, ShieldAlert } from 'lucide-react';
 
 const NAV = [
   { id: 'dashboard',    label: 'Dashboard',    icon: LayoutDashboard },
@@ -60,8 +60,10 @@ export default function AdminApp({ session, onLogout }) {
              setProfile(newProfile);
           }
         } else {
-          setProfile(data);
+           setProfile(data);
         }
+      } catch (err) {
+        console.error('Crash ao carregar perfil:', err);
       } finally {
         setLoading(false);
       }
@@ -124,16 +126,32 @@ export default function AdminApp({ session, onLogout }) {
 
   const renderPage = () => {
     switch (active) {
-      case 'dashboard':    return <AdminDashboard onNavigate={navigate} />;
-      case 'gallery':      return <AdminGallery />;
-      case 'testimonials': return <AdminTestimonials />;
-      case 'content':      return <AdminContent />;
-      case 'products':     return <AdminProducts />;
-      case 'categories':   return <AdminCategories />;
-      case 'orders':       return <AdminOrders />;
-      case 'users':        return <AdminUsers currentUser={profile} />;
-      case 'logs':         return <AdminLogs />;
-      default:             return <AdminDashboard onNavigate={navigate} />;
+      case 'dashboard':    return <AdminDashboard onNavigate={navigate} session={session} />;
+      case 'gallery':      return <AdminGallery session={session} />;
+      case 'testimonials': return <AdminTestimonials session={session} />;
+      case 'content':      return <AdminContent session={session} />;
+      case 'products':     return <AdminProducts session={session} />;
+      case 'categories':   return <AdminCategories session={session} />;
+      case 'orders':       return <AdminOrders session={session} />;
+      case 'users':        return <AdminUsers currentUser={profile} session={session} />;
+      case 'logs':         return <AdminLogs session={session} />;
+      default:             return <AdminDashboard onNavigate={navigate} session={session} />;
+    }
+  };
+
+  const safeRender = () => {
+    try {
+      return renderPage();
+    } catch (err) {
+      console.error('Erro na aba ativa:', err);
+      return (
+        <div className="bg-red-50 p-10 rounded-3xl border border-red-100 text-center">
+          <ShieldAlert className="mx-auto text-red-500 mb-4" size={48} />
+          <h2 className="text-red-700 font-serif text-xl mb-2">Erro ao carregar esta aba</h2>
+          <p className="text-red-600/60 text-sm mb-6">Ocorreu um erro interno. Tente recarregar ou mudar de aba.</p>
+          <button onClick={() => window.location.reload()} className="bg-red-500 text-white px-6 py-2 rounded-xl text-xs font-bold uppercase">Recarregar</button>
+        </div>
+      );
     }
   };
 
@@ -220,7 +238,7 @@ export default function AdminApp({ session, onLogout }) {
           </span>
         </div>
 
-        {renderPage()}
+        {safeRender()}
       </main>
     </div>
   );

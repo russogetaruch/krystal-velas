@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import DOMPurify from 'dompurify';
 import { Save, CheckCircle, AlertCircle, Info, ExternalLink } from 'lucide-react';
+import { logAudit } from './adminUtils';
 
 const FIELDS = [
   { key: 'hero_slogan',         label: 'Slogan Principal',          placeholder: 'Paz e Luz em Cada Detalhe',             multiline: false, hint: 'Título em destaque no Hero' },
@@ -9,15 +10,18 @@ const FIELDS = [
   { key: 'hero_description',    label: 'Texto de Destaque (Hero)',  placeholder: 'De Ibiporã para todo o Brasil...',      multiline: true,  hint: 'Parágrafo descritivo na hero section' },
   { key: 'fabrica_title',       label: 'Título — A Fábrica',       placeholder: 'Estrutura Fabril em Ibiporã, Paraná',   multiline: false, hint: 'Cabeçalho da seção Fábrica' },
   { key: 'fabrica_description', label: 'Descrição — A Fábrica',    placeholder: 'Nossa fábrica...',                      multiline: true,  hint: 'Texto descritivo sobre a fábrica' },
+  { key: 'footer_description',  label: 'Descrição — Rodapé',       placeholder: 'Luz e espiritualidade para o seu lar.', multiline: true,  hint: 'Texto que aparece abaixo da logo no rodapé' },
+  { key: 'contact_email',       label: 'E-mail de Contato',         placeholder: 'contato@krystalvelas.com.br',            multiline: false, hint: 'Exibido no rodapé' },
 ];
 
 const WHATSAPP_FIELDS = [
   { key: 'whatsapp_number', label: 'Número WhatsApp', placeholder: '5543998073376', hint: 'Só números com DDI+DDD, sem espaços ou símbolos. Ex: 5543999999999', multiline: false },
   { key: 'whatsapp_message_atacado', label: 'Mensagem — Botão Atacado', placeholder: 'Olá, queria acesso à tabela de Atacado para Lojista/Eventos.', hint: 'Texto pré-preenchido quando o cliente clica no botão de Atacado', multiline: true },
   { key: 'whatsapp_message_contact', label: 'Mensagem — Botão de Contato/Orçamento', placeholder: 'Olá! Gostaria de fazer um orçamento.', hint: 'Texto pré-preenchido no botão de contato flutuante', multiline: true },
+  { key: 'pix_key', label: 'Chave PIX (Para Checkout)', placeholder: 'CNPJ ou E-mail', hint: 'Chave que será exibida no checkout para o Copia e Cola', multiline: false },
 ];
 
-export default function AdminContent() {
+export default function AdminContent({ session }) {
   const [values, setValues] = useState({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(null);
@@ -53,6 +57,7 @@ export default function AdminContent() {
         .from('site_content')
         .upsert({ key, value: clean, updated_at: new Date().toISOString() }, { onConflict: 'key' });
       if (error) throw new Error(error.message);
+      await logAudit(session, 'SITE_CONTENT_UPDATE', { key });
       setMessages(prev => ({ ...prev, [key]: { type: 'success', text: 'Salvo com sucesso!' } }));
     } catch (err) {
       setMessages(prev => ({ ...prev, [key]: { type: 'error', text: 'Erro: ' + err.message } }));
