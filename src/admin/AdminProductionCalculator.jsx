@@ -219,64 +219,73 @@ export default function AdminProductionCalculator({ session, onClose }) {
                         type="number" step="0.01" value={financials.sellingPrice}
                         onFocus={handleNumericFocus}
                         onChange={e => setFinancials({...financials, sellingPrice: e.target.value})}
-                        className="w-full bg-white dark:bg-[#1a0a05] border border-transparent focus:border-orange-500 rounded-[1.5rem] pl-16 pr-6 py-6 text-4xl font-serif text-brown dark:text-white outline-none shadow-sm"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <label className="text-[10px] text-gray-400 font-bold uppercase block px-1">Impostos (Simples/DAS %)</label>
-                      <div className="relative">
+                        className="w-full bg-white dark:bg-[#1a0a05] border border-transparent focus:border-orange-500 rounded-[1.5rem] pl-16 pr-6 py-6 text-4xl font-serif text-brown                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] text-gray-500 font-bold uppercase block px-1">Impostos (Simples/DAS %)</label>
+                      <div className="relative group">
                          <input 
                           type="number" step="0.1" value={financials.taxesPercent}
                           onFocus={handleNumericFocus}
                           onChange={e => setFinancials({...financials, taxesPercent: e.target.value})}
-                          className="w-full bg-white dark:bg-white/5 border-transparent focus:border-orange-500 rounded-xl px-4 py-3 text-sm dark:text-white outline-none pr-10 font-mono"
+                          className="w-full bg-white dark:bg-white/5 border border-transparent focus:border-orange-500 rounded-2xl px-4 py-4 text-sm dark:text-white outline-none pr-10 font-mono shadow-sm transition-all"
                         />
-                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"><Percent size={14} /></span>
+                        <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-orange-500 transition-colors"><Percent size={14} /></span>
                       </div>
                     </div>
-                    <div className="p-4 bg-orange-500/10 rounded-xl border border-orange-500/20 flex flex-col justify-center">
-                       <p className="text-[9px] text-orange-500 font-bold uppercase">Custo Total</p>
-                       <p className="text-xl font-mono font-bold text-orange-600 dark:text-orange-400">R$ {totalCost.toFixed(2)}</p>
+                    <div className="p-4 bg-gray-100 dark:bg-white/10 rounded-2xl flex flex-col justify-center border border-transparent">
+                       <p className="text-[9px] text-gray-400 font-bold uppercase tracking-tighter">Custo Total Prod.</p>
+                       <p className="text-xl font-mono font-bold text-gray-700 dark:text-gray-200">
+                         <span className="text-xs opacity-40 mr-1">R$</span>{totalCost.toFixed(2)}
+                       </p>
                     </div>
                   </div>
                 </div>
 
-                {/* Scoreboard de Resultados */}
+                {/* Scoreboard de Resultados - Refined */}
                 <div className="grid grid-cols-2 gap-4">
-                  <div className={`p-6 rounded-3xl flex flex-col justify-between h-32 transition-all ${profit > 0 ? 'bg-green-600 shadow-xl shadow-green-600/20 text-white' : 'bg-red-50 dark:bg-red-500/10 text-red-500'}`}>
+                  <div className={`p-6 rounded-[2rem] flex flex-col justify-between min-h-[140px] transition-all duration-500 ${profit > 0 ? 'bg-green-600 shadow-xl shadow-green-600/20 text-white' : (profit < 0 ? 'bg-red-600 shadow-xl shadow-red-600/20 text-white' : 'bg-gray-100 dark:bg-white/5 text-gray-400')}`}>
                     <div className="flex justify-between items-start">
-                       <p className="text-[10px] font-bold uppercase tracking-widest opacity-80">Lucro Líquido</p>
-                       {profit > 0 ? <TrendingUp size={18} /> : <TrendingDown size={18} />}
+                       <div className="space-y-0.5">
+                         <p className="text-[10px] font-bold uppercase tracking-widest opacity-80">Lucro Líquido</p>
+                         <p className="text-[8px] font-bold uppercase opacity-60">por unidade</p>
+                       </div>
+                       {profit > 0 ? <TrendingUp size={20} className="opacity-40" /> : <TrendingDown size={20} className="opacity-40" />}
                     </div>
-                    <div>
-                       <p className="text-2xl font-serif">R$ {profit.toFixed(2)}</p>
-                       <p className="text-[10px] font-bold opacity-60">por unidade</p>
+                    <div className="flex items-baseline gap-1">
+                       <span className="text-lg font-serif opacity-70">R$</span>
+                       <p className="text-4xl font-serif leading-none tracking-tight">
+                         {Math.abs(profit).toFixed(2)}
+                       </p>
                     </div>
                   </div>
-                  <div className="bg-white dark:bg-[#1a0a05] p-6 rounded-3xl flex flex-col justify-between h-32 border border-gray-100 dark:border-white/5">
+
+                  <div className="bg-white dark:bg-[#1a0a05] p-6 rounded-[2rem] flex flex-col justify-between min-h-[140px] border border-gray-100 dark:border-white/10 shadow-sm">
                     <div className="flex justify-between items-start">
-                       <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Margem Bruta</p>
-                       <BarChart3 size={18} className="text-orange-500" />
+                       <div className="space-y-0.5">
+                         <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Margem Bruta</p>
+                         <p className="text-[8px] text-gray-400 font-bold uppercase opacity-60">Rentabilidade</p>
+                       </div>
+                       <PieChart size={20} className="text-orange-500 opacity-30" />
                     </div>
-                    <div>
-                       <p className="text-2xl font-serif text-brown dark:text-white">{margin.toFixed(1)}%</p>
-                       <p className="text-[10px] text-gray-400 font-bold">do preço de venda</p>
+                    <div className="flex items-baseline gap-0.5 text-brown dark:text-white">
+                       <p className="text-4xl font-serif leading-none tracking-tight">{margin.toFixed(1)}</p>
+                       <span className="text-2xl font-serif opacity-30">%</span>
                     </div>
                   </div>
                 </div>
 
                 {/* Detalhes de Impostos e Markup */}
-                <div className="space-y-3 pt-4 border-t border-gray-100 dark:border-white/5">
-                  <div className="flex justify-between text-xs">
-                    <span className="text-gray-400">Imposto sobre venda:</span>
+                <div className="space-y-3 pt-6 border-t border-gray-100 dark:border-white/5">
+                  <div className="flex justify-between items-center text-[11px] font-bold">
+                    <span className="text-gray-400 uppercase tracking-widest">Imposto sobre venda:</span>
                     <span className="text-red-500 font-mono">- R$ {taxesAmount.toFixed(2)}</span>
                   </div>
-                  <div className="flex justify-between text-xs">
-                    <span className="text-gray-400">Markup (Índice):</span>
-                    <span className="text-brown dark:text-white font-mono">{markup.toFixed(2)}x</span>
+                  <div className="flex justify-between items-center text-[11px] font-bold">
+                    <span className="text-gray-400 uppercase tracking-widest">Markup (Índice):</span>
+                    <span className="text-brown dark:text-white font-mono bg-gray-50 dark:bg-white/5 px-3 py-1 rounded-full">{markup.toFixed(2)}x</span>
+                  </div>
+                </div>
+ssName="text-brown dark:text-white font-mono">{markup.toFixed(2)}x</span>
                   </div>
                 </div>
               </div>
