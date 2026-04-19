@@ -14,6 +14,7 @@ import AdminInvoices from './AdminInvoices';
 import AdminSuppliers from './AdminSuppliers';
 import AdminRawMaterials from './AdminRawMaterials';
 import AdminProduction from './AdminProduction';
+import AdminTour from './AdminTour';
 import { LayoutDashboard, Images, MessageSquare, FileText, LogOut, Menu, X, Sun, Moon, ExternalLink, Shield, UserCog, Lock, Activity, ShoppingBag, Tag, ShoppingCart, ShieldAlert, Warehouse, Receipt, Building2, FlaskConical, Factory } from 'lucide-react';
 
 const NAV = [
@@ -39,6 +40,7 @@ export default function AdminApp({ session, onLogout }) {
   const [dark, setDark]           = useState(false);
   const [profile, setProfile]     = useState(null);
   const [loading, setLoading]     = useState(true);
+  const [showTour, setShowTour]   = useState(false);
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', dark);
@@ -71,6 +73,7 @@ export default function AdminApp({ session, onLogout }) {
           }
         } else {
            setProfile(data);
+           if (!data.has_seen_tour) setShowTour(true);
         }
       } catch (err) {
         console.error('Crash ao carregar perfil:', err);
@@ -184,7 +187,10 @@ export default function AdminApp({ session, onLogout }) {
           const Icon = item.icon;
           const isActive = active === item.id;
           return (
-            <button key={item.id} onClick={() => navigate(item.id)}
+            <button 
+              key={item.id} 
+              id={`tour-sidebar-${item.id}`}
+              onClick={() => navigate(item.id)}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all ${
                 isActive
                   ? 'bg-orange-50 dark:bg-orange-500/20 text-orange-600 dark:text-orange-400 border border-orange-200 dark:border-orange-500/20'
@@ -255,6 +261,17 @@ export default function AdminApp({ session, onLogout }) {
 
         {safeRender()}
       </main>
+
+      {/* Tour de Onboarding */}
+      {showTour && profile && (
+        <AdminTour 
+          userId={session.user.id} 
+          onComplete={() => {
+            setShowTour(false);
+            setProfile({ ...profile, has_seen_tour: true });
+          }} 
+        />
+      )}
     </div>
   );
 }

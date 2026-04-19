@@ -167,6 +167,7 @@ export default function AdminInventory({ session }) {
         </div>
         <div className="flex gap-3">
           <button
+            id="tour-calculator-btn"
             onClick={() => setIsCalculatorOpen(true)}
             className="bg-brown dark:bg-white/10 text-white dark:text-white py-3 px-5 rounded-2xl text-xs font-bold uppercase tracking-widest hover:bg-black dark:hover:bg-white/20 transition-all flex items-center gap-2 shadow-lg shadow-brown/20"
           >
