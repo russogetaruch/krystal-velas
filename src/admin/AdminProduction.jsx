@@ -134,6 +134,8 @@ export default function AdminProduction({ session }) {
     }
   };
 
+  const handleNumericFocus = (e) => e.target.select();
+
   return (
     <div className="space-y-8">
       {/* Header */}
@@ -271,18 +273,24 @@ export default function AdminProduction({ session }) {
                           {materials.map(m => <option key={m.id} value={m.id}>{m.name} ({m.unit})</option>)}
                         </select>
                       </div>
-                      <div className="w-32">
+                      <div className="w-32 relative">
                         <label className="text-[10px] text-gray-400 font-bold uppercase tracking-widest block mb-1.5">Quantidade</label>
-                        <input 
-                          type="number" step="0.001" 
-                          value={item.quantity} 
-                          onChange={e => {
-                            const newItems = [...recipeItems];
-                            newItems[idx].quantity = e.target.value;
-                            setRecipeItems(newItems);
-                          }}
-                          className="w-full bg-gray-50 dark:bg-white/5 border-none rounded-xl px-4 py-3 dark:text-white"
-                        />
+                        <div className="relative group">
+                          <input 
+                            type="number" step="0.001" 
+                            onFocus={handleNumericFocus}
+                            value={item.quantity} 
+                            onChange={e => {
+                              const newItems = [...recipeItems];
+                              newItems[idx].quantity = e.target.value;
+                              setRecipeItems(newItems);
+                            }}
+                            className="w-full bg-gray-50 dark:bg-white/5 border-none rounded-xl px-4 py-3 dark:text-white outline-none pr-10"
+                          />
+                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-orange-500 font-bold uppercase opacity-50 select-none">
+                            {materials.find(m => m.id === item.material_id)?.unit}
+                          </span>
+                        </div>
                       </div>
                       <button onClick={() => removeRecipeItem(idx)} className="p-3 text-red-400 hover:bg-red-50 rounded-xl transition-colors"><X size={18} /></button>
                     </div>
@@ -302,6 +310,7 @@ export default function AdminProduction({ session }) {
                          <input 
                            type="number" 
                            value={prodQty} 
+                           onFocus={handleNumericFocus}
                            onChange={e => setProdQty(Math.max(1, parseInt(e.target.value) || 1))}
                            className="bg-transparent text-5xl font-serif text-brown dark:text-white text-center w-24 outline-none" 
                          />
