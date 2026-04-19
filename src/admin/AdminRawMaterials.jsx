@@ -329,7 +329,7 @@ export default function AdminRawMaterials({ session }) {
             </div>
             
             <form onSubmit={handleSave} className="flex-1 overflow-y-auto p-8 space-y-6">
-              <div className="space-y-4">
+              <div className="space-y-6">
                 <div>
                   <label className="text-gray-400 text-[10px] font-bold uppercase tracking-widest block mb-1.5 px-1">Nome do Insumo *</label>
                   <input required value={form.name} onChange={e => setForm({...form, name: e.target.value})} placeholder="Ex: Parafina de Soja Eco" className="w-full bg-gray-50 dark:bg-white/5 border border-transparent focus:border-orange-500 rounded-2xl px-4 py-4 dark:text-white outline-none transition-all shadow-inner" />
@@ -350,19 +350,19 @@ export default function AdminRawMaterials({ session }) {
                     </select>
                   </div>
                 </div>
-                  <div className="relative">
-                    <label className="text-gray-400 text-[10px] font-bold uppercase tracking-widest block mb-1.5 px-1">Custo Unitário Médio</label>
-                    <div className="relative group">
-                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300 font-mono text-sm group-focus-within:text-orange-500 transition-colors">R$</span>
-                      <input 
-                        type="number" step="0.001" 
-                        onFocus={handleNumericFocus}
-                        value={form.unit_cost} 
-                        onChange={e => setForm({...form, unit_cost: e.target.value})} 
-                        placeholder="0.00"
-                        className="w-full bg-gray-50 dark:bg-white/5 border border-transparent focus:border-orange-500 rounded-2xl pl-12 pr-4 py-4 dark:text-white outline-none font-mono shadow-inner" 
-                      />
-                    </div>
+
+                <div className="relative">
+                  <label className="text-gray-400 text-[10px] font-bold uppercase tracking-widest block mb-1.5 px-1">Custo Unitário Médio</label>
+                  <div className="relative group">
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300 font-mono text-sm group-focus-within:text-orange-500 transition-colors">R$</span>
+                    <input 
+                      type="number" step="0.001" 
+                      onFocus={handleNumericFocus}
+                      value={form.unit_cost} 
+                      onChange={e => setForm({...form, unit_cost: e.target.value})} 
+                      placeholder="0.00"
+                      className="w-full bg-gray-50 dark:bg-white/5 border border-transparent focus:border-orange-500 rounded-2xl pl-12 pr-4 py-4 dark:text-white outline-none font-mono shadow-inner" 
+                    />
                   </div>
                 </div>
 
@@ -415,7 +415,7 @@ export default function AdminRawMaterials({ session }) {
               </div>
 
               {error && (
-                <div className="p-4 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 rounded-2xl text-red-600 dark:text-red-400 text-[10px] flex items-center gap-2 font-bold uppercase tracking-widest">
+                <div className="p-4 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 rounded-2xl text-red-600 dark:text-red-400 text-[10px] flex items-center gap-2 font-bold uppercase tracking-widest mt-6">
                   <AlertCircle size={16} /> {error}
                 </div>
               )}

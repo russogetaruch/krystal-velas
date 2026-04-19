@@ -219,7 +219,11 @@ export default function AdminProductionCalculator({ session, onClose }) {
                         type="number" step="0.01" value={financials.sellingPrice}
                         onFocus={handleNumericFocus}
                         onChange={e => setFinancials({...financials, sellingPrice: e.target.value})}
-                        className="w-full bg-white dark:bg-[#1a0a05] border border-transparent focus:border-orange-500 rounded-[1.5rem] pl-16 pr-6 py-6 text-4xl font-serif text-brown                  <div className="grid grid-cols-2 gap-4">
+                        className="w-full bg-white dark:bg-[#1a0a05] border border-transparent focus:border-orange-500 rounded-[1.5rem] pl-16 pr-6 py-6 text-4xl font-serif text-brown dark:text-white outline-none font-mono shadow-sm transition-all"
+                      />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1.5">
                       <label className="text-[10px] text-gray-500 font-bold uppercase block px-1">Impostos (Simples/DAS %)</label>
                       <div className="relative group">
@@ -283,9 +287,6 @@ export default function AdminProductionCalculator({ session, onClose }) {
                   <div className="flex justify-between items-center text-[11px] font-bold">
                     <span className="text-gray-400 uppercase tracking-widest">Markup (Índice):</span>
                     <span className="text-brown dark:text-white font-mono bg-gray-50 dark:bg-white/5 px-3 py-1 rounded-full">{markup.toFixed(2)}x</span>
-                  </div>
-                </div>
-ssName="text-brown dark:text-white font-mono">{markup.toFixed(2)}x</span>
                   </div>
                 </div>
               </div>
