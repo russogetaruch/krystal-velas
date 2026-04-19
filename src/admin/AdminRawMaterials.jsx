@@ -12,6 +12,7 @@ const EMPTY_FORM = {
   stock: '', 
   min_stock: '', 
   unit_cost: '', 
+  supplier_id: '',
   notes: '', 
   is_active: true 
 };
@@ -29,9 +30,9 @@ export default function AdminRawMaterials({ session }) {
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
-  const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterUnit, setFilterUnit] = useState('all');
+  const [suppliers, setSuppliers] = useState([]);
   const [viewMode, setViewMode] = useState('table'); // 'grid' | 'table'
 
   const [form, setForm] = useState(EMPTY_FORM);
@@ -44,13 +45,14 @@ export default function AdminRawMaterials({ session }) {
   async function fetchMaterials() {
     setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('raw_materials')
-        .select('*')
-        .order('name');
+      const [mRes, sRes] = await Promise.all([
+        supabase.from('raw_materials').select('*, suppliers(name)').order('name'),
+        supabase.from('suppliers').select('id, name').eq('is_active', true).order('name')
+      ]);
       
-      if (error) throw error;
-      setMaterials(data || []);
+      if (mRes.error) throw mRes.error;
+      setMaterials(mRes.data || []);
+      setSuppliers(sRes.data || []);
     } catch (err) {
       setError('Erro ao carregar insumos: ' + err.message);
     } finally {
@@ -99,10 +101,26 @@ export default function AdminRawMaterials({ session }) {
         if (error) throw error;
         await logAudit(session, 'RAW_MATERIAL_UPDATE', { name: form.name, id: editingItem.id });
       } else {
-        const { error } = await supabase
+        const { data, error } = await supabase
           .from('raw_materials')
-          .insert([payload]);
+          .insert([payload])
+          .select()
+          .single();
         if (error) throw error;
+
+        // Registrar log de entrada inicial se houver estoque
+        if (payload.stock > 0) {
+          await supabase.from('inventory_logs').insert({
+            raw_material_id : data.id,
+            supplier_id     : payload.supplier_id || null,
+            type            : 'entrada',
+            quantity        : payload.stock,
+            unit_cost       : payload.unit_cost,
+            notes           : 'Estoque inicial de cadastro',
+            created_by      : session?.user?.id
+          });
+        }
+        
         await logAudit(session, 'RAW_MATERIAL_CREATE', { name: form.name });
       }
       setIsModalOpen(false);
@@ -260,6 +278,7 @@ export default function AdminRawMaterials({ session }) {
                   </td>
                   <td className="px-6 py-4 text-center">
                     <span className="bg-gray-100 dark:bg-white/5 px-2 py-1 rounded-lg text-[10px] font-mono font-bold text-gray-400">{m.unit.toUpperCase()}</span>
+                    {m.suppliers?.name && <p className="text-[9px] text-orange-500 mt-1 truncate max-w-[80px]">{m.suppliers.name}</p>}
                   </td>
                   <td className="px-6 py-4">
                      <div className="flex items-center justify-center gap-1 group/edit relative max-w-[120px] mx-auto">
@@ -315,14 +334,22 @@ export default function AdminRawMaterials({ session }) {
                   <label className="text-gray-400 text-[10px] font-bold uppercase tracking-widest block mb-1.5 px-1">Nome do Insumo *</label>
                   <input required value={form.name} onChange={e => setForm({...form, name: e.target.value})} placeholder="Ex: Parafina de Soja Eco" className="w-full bg-gray-50 dark:bg-white/5 border border-transparent focus:border-orange-500 rounded-2xl px-4 py-4 dark:text-white outline-none transition-all shadow-inner" />
                 </div>
-                
-                <div className="grid grid-cols-2 gap-4">
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-gray-400 text-[10px] font-bold uppercase tracking-widest block mb-1.5 px-1">Fornecedor Principal</label>
+                    <select value={form.supplier_id} onChange={e => setForm({...form, supplier_id: e.target.value})} className="w-full bg-gray-50 dark:bg-white/5 border border-transparent focus:border-orange-500 rounded-2xl px-4 py-4 dark:text-white outline-none appearance-none cursor-pointer shadow-inner">
+                      <option value="">Selecione um fornecedor...</option>
+                      {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                    </select>
+                  </div>
                   <div>
                     <label className="text-gray-400 text-[10px] font-bold uppercase tracking-widest block mb-1.5 px-1">Unidade de Medida *</label>
                     <select required value={form.unit} onChange={e => setForm({...form, unit: e.target.value})} className="w-full bg-gray-50 dark:bg-white/5 border border-transparent focus:border-orange-500 rounded-2xl px-4 py-4 dark:text-white outline-none appearance-none cursor-pointer shadow-inner">
                       {UNITS.map(u => <option key={u.id} value={u.id}>{u.label}</option>)}
                     </select>
                   </div>
+                </div>
                   <div className="relative">
                     <label className="text-gray-400 text-[10px] font-bold uppercase tracking-widest block mb-1.5 px-1">Custo Unitário Médio</label>
                     <div className="relative group">

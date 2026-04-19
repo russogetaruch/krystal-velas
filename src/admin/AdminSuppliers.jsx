@@ -21,8 +21,15 @@ export default function AdminSuppliers({ session }) {
 
   async function fetchSuppliers() {
     setLoading(true);
-    const { data } = await supabase.from('suppliers').select('*').order('name');
-    setSuppliers(data || []);
+    const { data: suppliersData } = await supabase.from('suppliers').select('*').order('name');
+    const { data: materialsData }  = await supabase.from('raw_materials').select('id, name, supplier_id');
+    
+    const enriched = (suppliersData || []).map(s => ({
+      ...s,
+      materials: (materialsData || []).filter(m => m.supplier_id === s.id)
+    }));
+
+    setSuppliers(enriched);
     setLoading(false);
   }
 
@@ -165,6 +172,19 @@ export default function AdminSuppliers({ session }) {
                 </div>
               )}
             </div>
+
+            {s.materials?.length > 0 && (
+              <div className="mt-5 space-y-2">
+                <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Itens Fornecidos</p>
+                <div className="flex flex-wrap gap-1.5">
+                   {s.materials.map(m => (
+                     <span key={m.id} className="bg-gray-50 dark:bg-white/5 border border-gray-100 dark:border-white/5 px-2 py-1 rounded-lg text-[9px] font-bold text-gray-500 dark:text-gray-400">
+                       {m.name}
+                     </span>
+                   ))}
+                </div>
+              </div>
+            )}
 
             <div className="mt-5 pt-4 border-t border-gray-50 dark:border-white/5">
               <span className={`text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full ${

@@ -19,7 +19,9 @@ const EMPTY_FORM = { product_id: '', supplier_id: '', type: 'entrada', quantity:
 export default function AdminInventory({ session }) {
   const [logs,      setLogs]      = useState([]);
   const [products,  setProducts]  = useState([]);
+  const [materials, setMaterials] = useState([]);
   const [suppliers, setSuppliers] = useState([]);
+  const [activeTab, setActiveTab] = useState('produtos'); // 'produtos' | 'insumos'
   const [loading,   setLoading]   = useState(true);
   const [filterProduct, setFilterProduct] = useState('all');
   const [filterType,    setFilterType]    = useState('all');
@@ -38,14 +40,16 @@ export default function AdminInventory({ session }) {
       const [logsRes, prodsRes, suppRes] = await Promise.all([
         supabase
           .from('inventory_logs')
-          .select('*, products(name, stock), suppliers(name)')
+          .select('*, products(name, stock, unit_cost), raw_materials(name, stock, unit_cost, unit), suppliers(name)')
           .order('created_at', { ascending: false })
-          .limit(300),
+          .limit(500),
         supabase.from('products').select('id, name, stock, unit_cost').order('name'),
+        supabase.from('raw_materials').select('id, name, stock, unit_cost, unit').order('name'),
         supabase.from('suppliers').select('id, name').eq('is_active', true).order('name'),
       ]);
       setLogs(logsRes.data || []);
       setProducts(prodsRes.data || []);
+      setMaterials(matRes.data || []);
       setSuppliers(suppRes.data || []);
     } catch (err) {
       console.error(err);
@@ -55,17 +59,20 @@ export default function AdminInventory({ session }) {
   }
 
   // ── Stats ────────────────────────────────────────────────────────
-  const totalEntradas = logs.filter(l => l.type === 'entrada').reduce((s, l) => s + Math.abs(l.quantity), 0);
-  const totalSaidas   = logs.filter(l => l.type === 'saida').reduce((s, l) => s + Math.abs(l.quantity), 0);
-  const cmv           = logs
+  // ── Stats ────────────────────────────────────────────────────────
+  const currentLogs = logs.filter(l => activeTab === 'produtos' ? l.product_id : l.raw_material_id);
+  const totalEntradas = currentLogs.filter(l => l.type === 'entrada').reduce((s, l) => s + Math.abs(l.quantity), 0);
+  const totalSaidas   = currentLogs.filter(l => l.type === 'saida').reduce((s, l) => s + Math.abs(l.quantity), 0);
+  const cmv           = currentLogs
     .filter(l => l.type === 'saida' && l.unit_cost)
     .reduce((s, l) => s + Math.abs(l.quantity) * l.unit_cost, 0);
 
   // ── Filtered list ────────────────────────────────────────────────
-  const filteredLogs = logs.filter(l => {
-    const matchProd = filterProduct === 'all' || l.product_id === filterProduct;
+  const filteredLogs = currentLogs.filter(l => {
+    const matchId = filterProduct === 'all' || 
+                   (activeTab === 'produtos' ? l.product_id === filterProduct : l.raw_material_id === filterProduct);
     const matchType = filterType    === 'all' || l.type       === filterType;
-    return matchProd && matchType;
+    return matchId && matchType;
   });
 
   // ── Modal ────────────────────────────────────────────────────────
@@ -136,6 +143,22 @@ export default function AdminInventory({ session }) {
   return (
     <div className="space-y-8">
 
+      {/* Tabs de Separação */}
+      <div className="flex bg-gray-100 dark:bg-white/5 p-1 rounded-2xl w-fit">
+        <button 
+          onClick={() => { setActiveTab('produtos'); setFilterProduct('all'); }}
+          className={`px-8 py-3 rounded-xl text-xs font-bold uppercase tracking-widest transition-all ${activeTab === 'produtos' ? 'bg-white dark:bg-orange-500 text-orange-600 dark:text-white shadow-sm' : 'text-gray-400'}`}
+        >
+          Produtos Acabados
+        </button>
+        <button 
+          onClick={() => { setActiveTab('insumos'); setFilterProduct('all'); }}
+          className={`px-8 py-3 rounded-xl text-xs font-bold uppercase tracking-widest transition-all ${activeTab === 'insumos' ? 'bg-white dark:bg-orange-500 text-orange-600 dark:text-white shadow-sm' : 'text-gray-400'}`}
+        >
+          Almoxarifado (Insumos)
+        </button>
+      </div>
+
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
@@ -202,9 +225,11 @@ export default function AdminInventory({ session }) {
           onChange={e => setFilterProduct(e.target.value)}
           className="flex-1 bg-gray-50 dark:bg-white/5 border border-transparent focus:border-orange-500 rounded-xl px-4 py-2.5 text-sm dark:text-white outline-none"
         >
-          <option value="all">Todos os Produtos</option>
-          {products.map(p => (
+          <option value="all">Todos os {activeTab === 'produtos' ? 'Produtos' : 'Insumos'}</option>
+          {activeTab === 'produtos' ? products.map(p => (
             <option key={p.id} value={p.id}>{p.name} (estoque: {p.stock})</option>
+          )) : materials.map(m => (
+            <option key={m.id} value={m.id}>{m.name} (estoque: {m.stock} {m.unit})</option>
           ))}
         </select>
         <select
@@ -247,7 +272,9 @@ export default function AdminInventory({ session }) {
                 return (
                   <tr key={log.id} className="hover:bg-gray-50 dark:hover:bg-white/[0.02] transition-colors">
                     <td className="px-6 py-4">
-                      <p className="font-bold text-gray-900 dark:text-white">{log.products?.name || '—'}</p>
+                      <p className="font-bold text-gray-900 dark:text-white">
+                        {activeTab === 'produtos' ? log.products?.name : log.raw_materials?.name}
+                      </p>
                     </td>
                     <td className="px-6 py-4">
                       <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full border text-[10px] font-bold uppercase tracking-widest ${cfg.color}`}>
@@ -257,6 +284,9 @@ export default function AdminInventory({ session }) {
                     <td className="px-6 py-4">
                       <span className={`font-mono font-bold text-sm ${log.quantity > 0 ? 'text-green-600' : 'text-red-500'}`}>
                         {log.quantity > 0 ? '+' : ''}{log.quantity}
+                        <span className="text-[10px] ml-1 opacity-50">
+                          {activeTab === 'produtos' ? 'un' : log.raw_materials?.unit}
+                        </span>
                       </span>
                     </td>
                     <td className="px-6 py-4">
