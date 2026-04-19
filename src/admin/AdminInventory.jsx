@@ -2,9 +2,10 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import {
   ArrowUpRight, ArrowDownRight, RotateCcw, X,
-  Plus, AlertCircle, Package, TrendingDown, TrendingUp, DollarSign
+  Plus, AlertCircle, Package, TrendingDown, TrendingUp, DollarSign, Calculator
 } from 'lucide-react';
 import { logAudit } from './adminUtils';
+import AdminProductionCalculator from './AdminProductionCalculator';
 
 const TYPE_CONFIG = {
   entrada      : { label: 'Entrada',      color: 'text-green-600 bg-green-50 dark:bg-green-500/10 border-green-100 dark:border-green-500/20', icon: ArrowUpRight },
@@ -23,6 +24,7 @@ export default function AdminInventory({ session }) {
   const [filterProduct, setFilterProduct] = useState('all');
   const [filterType,    setFilterType]    = useState('all');
   const [isModalOpen,   setIsModalOpen]   = useState(false);
+  const [isCalculatorOpen, setIsCalculatorOpen] = useState(false);
   const [modalMode,     setModalMode]     = useState('entrada');
   const [form,    setForm]    = useState(EMPTY_FORM);
   const [saving,  setSaving]  = useState(false);
@@ -141,6 +143,12 @@ export default function AdminInventory({ session }) {
           <p className="text-gray-500 dark:text-white/40 text-sm">Rastreio de movimentações e base de cálculo do CMV.</p>
         </div>
         <div className="flex gap-3">
+          <button
+            onClick={() => setIsCalculatorOpen(true)}
+            className="bg-brown dark:bg-white/10 text-white dark:text-white py-3 px-5 rounded-2xl text-xs font-bold uppercase tracking-widest hover:bg-black dark:hover:bg-white/20 transition-all flex items-center gap-2 shadow-lg shadow-brown/20"
+          >
+            <Calculator size={16} /> Calculadora de Custos
+          </button>
           <button
             onClick={() => openModal('ajuste')}
             className="border border-gray-200 dark:border-white/10 text-gray-600 dark:text-white/60 py-3 px-5 rounded-2xl text-xs font-bold uppercase tracking-widest hover:bg-gray-50 dark:hover:bg-white/5 transition-all flex items-center gap-2"
@@ -391,6 +399,13 @@ export default function AdminInventory({ session }) {
             </div>
           </div>
         </div>
+      )}
+      {/* Calculadora de Produção */}
+      {isCalculatorOpen && (
+        <AdminProductionCalculator 
+          session={session} 
+          onClose={() => setIsCalculatorOpen(false)} 
+        />
       )}
     </div>
   );
