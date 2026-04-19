@@ -54,15 +54,27 @@ export default function AdminApp({ session, onLogout }) {
   useEffect(() => {
     async function getProfile() {
       try {
-        const { data, error } = await supabase
+        // Tenta buscar com a nova coluna do Tour
+        let { data, error } = await supabase
           .from('profiles')
-          .select('*')
+          .select('id, email, role, has_seen_tour')
           .eq('id', session.user.id)
           .single();
 
+        // Se der erro 400 (coluna não existe no cache), tenta busca padrão
+        if (error && error.code === '42703' || (error && error.message?.includes('has_seen_tour'))) {
+           console.warn('Coluna has_seen_tour não encontrada. Tentando fallback...');
+           const fallback = await supabase
+            .from('profiles')
+            .select('id, email, role')
+            .eq('id', session.user.id)
+            .single();
+           data = fallback.data;
+           error = fallback.error;
+        }
+
         if (error) {
           console.error('Erro ao carregar perfil:', error);
-          // Se não existir perfil, cria um como pendente
           if (error.code === 'PGRST116') {
              const { data: newProfile } = await supabase
                .from('profiles')
@@ -73,7 +85,8 @@ export default function AdminApp({ session, onLogout }) {
           }
         } else {
            setProfile(data);
-           if (!data.has_seen_tour) setShowTour(true);
+           // Só mostra o tour se a coluna existir e for false
+           if (data && data.has_seen_tour === false) setShowTour(true);
         }
       } catch (err) {
         console.error('Crash ao carregar perfil:', err);
