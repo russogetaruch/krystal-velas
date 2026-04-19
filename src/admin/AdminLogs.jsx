@@ -16,7 +16,7 @@ export default function AdminLogs() {
     try {
       const { data, error } = await supabase
         .from('audit_logs')
-        .select('*')
+        .select('id, event, email, details, ip, severity, created_at')
         .order('created_at', { ascending: false });
 
       if (error) throw error;

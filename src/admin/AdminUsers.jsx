@@ -55,7 +55,7 @@ export default function AdminUsers({ currentUser }) {
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('*')
+        .select('id, email, role, created_at, has_seen_tour')
         .order('role', { ascending: false })
         .order('created_at', { ascending: true });
 
