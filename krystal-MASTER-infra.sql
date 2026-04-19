@@ -23,7 +23,6 @@ CREATE TABLE IF NOT EXISTS categories (
 CREATE TABLE IF NOT EXISTS products (
   id          UUID        PRIMARY KEY DEFAULT uuid_generate_v4(),
   name        TEXT        NOT NULL,
-  slug        TEXT        UNIQUE NOT NULL,
   description TEXT,
   price       DECIMAL(10,2) NOT NULL DEFAULT 0,
   stock       INTEGER     NOT NULL DEFAULT 0,
@@ -33,6 +32,16 @@ CREATE TABLE IF NOT EXISTS products (
   created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at  TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+-- Garantir colunas essenciais em Categorias e Produtos (Schema Evolution)
+ALTER TABLE categories ADD COLUMN IF NOT EXISTS slug TEXT;
+ALTER TABLE categories ADD COLUMN IF NOT EXISTS description TEXT;
+ALTER TABLE categories ADD UNIQUE (slug);
+
+ALTER TABLE products   ADD COLUMN IF NOT EXISTS slug TEXT;
+ALTER TABLE products   ADD COLUMN IF NOT EXISTS unit_cost DECIMAL(10,2) DEFAULT 0;
+ALTER TABLE products   ADD COLUMN IF NOT EXISTS category_id UUID REFERENCES categories(id) ON DELETE SET NULL;
+ALTER TABLE products   ADD UNIQUE (slug);
 
 -- ----------------------------------------------------------------
 -- 2. FORNECEDORES
