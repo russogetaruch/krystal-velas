@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '../lib/supabase';
-import { Images, MessageSquare, FileText, ExternalLink, TrendingUp, CheckCircle, AlertTriangle, Wrench, Clock, X, ShoppingCart, ShoppingBag, Package, DollarSign, TrendingDown, BarChart3 } from 'lucide-react';
+import { Images, MessageSquare, FileText, ExternalLink, TrendingUp, CheckCircle, AlertTriangle, Wrench, Clock, X, ShoppingCart, ShoppingBag, Package, DollarSign, TrendingDown, BarChart3, FlaskConical } from 'lucide-react';
 import { logAudit } from './adminUtils';
 
 const DURATION_OPTIONS = [
@@ -38,7 +38,7 @@ function useCountdown(until) {
 export default function AdminDashboard({ onNavigate, session }) {
   const [stats, setStats]       = useState({ gallery: 0, testimonials: 0, activeTestimonials: 0, content: 0 });
   const [salesStats, setSalesStats] = useState({ revenue: 0, totalOrders: 0, pendingOrders: 0, avgTicket: 0 });
-  const [financial, setFinancial] = useState({ cmv: 0, grossProfit: 0, grossMargin: 0 });
+  const [financial, setFinancial] = useState({ cmv: 0, grossProfit: 0, grossMargin: 0, rawValue: 0 });
   const [topProducts, setTopProducts] = useState([]);
   const [lowStockProducts, setLowStockProducts] = useState([]);
   const [loading, setLoading]   = useState(true);
@@ -59,7 +59,7 @@ export default function AdminDashboard({ onNavigate, session }) {
   useEffect(() => {
     const load = async () => {
       try {
-        const [g, t, c, sc, al, ords, invLogs] = await Promise.all([
+        const [g, t, c, sc, al, ords, invLogs, rawRes] = await Promise.all([
           supabase.from('gallery').select('*', { count: 'exact' }).limit(4).order('created_at', { ascending: false }),
           supabase.from('testimonials').select('*', { count: 'exact' }),
           supabase.from('site_content').select('*', { count: 'exact' }),
@@ -67,6 +67,7 @@ export default function AdminDashboard({ onNavigate, session }) {
           supabase.from('audit_logs').select('*').order('created_at', { ascending: false }).limit(3),
           supabase.from('orders').select('*').order('created_at', { ascending: false }),
           supabase.from('inventory_logs').select('quantity, unit_cost').eq('type', 'saida'),
+          supabase.from('raw_materials').select('stock, unit_cost'),
         ]);
 
         setStats({
@@ -91,7 +92,9 @@ export default function AdminDashboard({ onNavigate, session }) {
         );
         const grossProfit = revenue - cmv;
         const grossMargin = revenue > 0 ? (grossProfit / revenue) * 100 : 0;
-        setFinancial({ cmv, grossProfit, grossMargin });
+        const rawValue    = (rawRes.data || []).reduce((sum, m) => sum + (m.stock * (m.unit_cost || 0)), 0);
+        
+        setFinancial({ cmv, grossProfit, grossMargin, rawValue });
 
         setRecentGallery(g.data || []);
         setRecentLogs(al.data || []);
@@ -214,10 +217,11 @@ export default function AdminDashboard({ onNavigate, session }) {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard icon={Images}        label="Vitrine Digital"     value={stats.gallery}       sub="itens"              color="bg-orange-500" onClick={() => onNavigate('gallery')} />
         <StatCard icon={MessageSquare} label="Voz do Cliente"      value={stats.testimonials}  sub="depoimentos" color="bg-orange-600"   onClick={() => onNavigate('testimonials')} />
         <StatCard icon={Package}       label="Inventário"          value={loading ? '...' : (lowStockProducts.length > 0 ? lowStockProducts.length : '0')} sub={lowStockProducts.length > 0 ? 'em alerta' : 'saudável'} color={lowStockProducts.length > 0 ? 'bg-red-500 animate-pulse' : 'bg-stone'} onClick={() => onNavigate('products')} />
+        <StatCard icon={FlaskConical}  label="Almoxarifado"        value={loading ? '...' : `R$ ${financial.rawValue.toFixed(0)}`} sub="em insumos" color="bg-blue-600" onClick={() => onNavigate('raw_materials')} />
       </div>
 
       {/* ─── Métricas de Vendas ───────────────────────────────────── */}

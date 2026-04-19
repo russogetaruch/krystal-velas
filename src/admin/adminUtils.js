@@ -102,3 +102,45 @@ export async function deductStock(session, orderId, items) {
   return results;
 }
 
+/**
+ * Calcula o custo teórico de um produto baseado na sua Ficha Técnica (BOM).
+ */
+export async function calculateBOMCost(productId) {
+  try {
+    const { data: composition } = await supabase
+      .from('product_composition')
+      .select('quantity, raw_materials(unit_cost)')
+      .eq('product_id', productId);
+
+    if (!composition) return 0;
+
+    return composition.reduce((acc, item) => {
+      const cost = item.raw_materials?.unit_cost || 0;
+      return acc + (item.quantity * cost);
+    }, 0);
+  } catch (err) {
+    console.error('[calculateBOMCost] Erro:', err);
+    return 0;
+  }
+}
+
+/**
+ * Calcula o valor total financeiro imobilizado em insumos.
+ */
+export async function getRawMaterialsValue() {
+  try {
+    const { data } = await supabase
+      .from('raw_materials')
+      .select('stock, unit_cost');
+
+    if (!data) return 0;
+
+    return data.reduce((acc, item) => {
+      return acc + (item.stock * item.unit_cost);
+    }, 0);
+  } catch (err) {
+    console.error('[getRawMaterialsValue] Erro:', err);
+    return 0;
+  }
+}
+

@@ -12,7 +12,9 @@ import AdminOrders from './AdminOrders';
 import AdminInventory from './AdminInventory';
 import AdminInvoices from './AdminInvoices';
 import AdminSuppliers from './AdminSuppliers';
-import { LayoutDashboard, Images, MessageSquare, FileText, LogOut, Menu, X, Sun, Moon, ExternalLink, Shield, UserCog, Lock, Activity, ShoppingBag, Tag, ShoppingCart, ShieldAlert, Warehouse, Receipt, Building2 } from 'lucide-react';
+import AdminRawMaterials from './AdminRawMaterials';
+import AdminProduction from './AdminProduction';
+import { LayoutDashboard, Images, MessageSquare, FileText, LogOut, Menu, X, Sun, Moon, ExternalLink, Shield, UserCog, Lock, Activity, ShoppingBag, Tag, ShoppingCart, ShieldAlert, Warehouse, Receipt, Building2, FlaskConical, Factory } from 'lucide-react';
 
 const NAV = [
   { id: 'dashboard',    label: 'Dashboard',      icon: LayoutDashboard },
@@ -22,6 +24,8 @@ const NAV = [
   { id: 'inventory',    label: 'Estoque',         icon: Warehouse },
   { id: 'invoices',     label: 'NF-e',            icon: Receipt },
   { id: 'suppliers',    label: 'Fornecedores',    icon: Building2,    superOnly: true },
+  { id: 'raw_materials', label: 'Insumos',         icon: FlaskConical },
+  { id: 'production',    label: 'Produção',        icon: Factory },
   { id: 'gallery',      label: 'Fotos Vitrine',   icon: Images },
   { id: 'testimonials', label: 'Depoimentos',     icon: MessageSquare },
   { id: 'content',      label: 'Conteúdo',        icon: FileText },
@@ -142,6 +146,8 @@ export default function AdminApp({ session, onLogout }) {
       case 'inventory':    return <AdminInventory session={session} />;
       case 'invoices':     return <AdminInvoices session={session} />;
       case 'suppliers':    return <AdminSuppliers session={session} />;
+      case 'raw_materials': return <AdminRawMaterials session={session} />;
+      case 'production':    return <AdminProduction session={session} />;
       case 'users':        return <AdminUsers currentUser={profile} session={session} />;
       case 'logs':         return <AdminLogs session={session} />;
       default:             return <AdminDashboard onNavigate={navigate} session={session} />;
