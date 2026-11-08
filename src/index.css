@@ -1,0 +1,94 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+  body {
+    @apply bg-[#FFFDF7] text-[#2D1407] font-sans antialiased overflow-x-hidden;
+  }
+  
+  /* Premium Scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-orange-500/20 rounded-full hover:bg-orange-500/40 transition-colors;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   VISIBILIDADE EM TELA NORMAL
+   ══════════════════════════════════════════════════════════════════════════ */
+@media screen {
+  #print-view {
+    display: none !important;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   ESTILOS DE IMPRESSÃO / EXPORTAÇÃO OFICIAL DE CATÁLOGO EM PDF
+   Garante isolamento absoluto: o site/admin NUNCA aparecem na impressão.
+   ══════════════════════════════════════════════════════════════════════════ */
+@media print {
+  /* 1. Remove 100% da árvore DOM da aplicação de tela (incluindo todo o Admin) */
+  #screen-view,
+  .no-print,
+  body > *:not(#root),
+  #root > *:not(#print-view) {
+    display: none !important;
+  }
+
+  /* 2. O catálogo de impressão é o ÚNICO elemento renderizado */
+  #print-view,
+  #print-view .printable-catalog-document {
+    display: block !important;
+    position: static !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+    color: #1a1a1a !important;
+    visibility: visible !important;
+  }
+
+  #print-view * {
+    visibility: visible !important;
+  }
+
+  /* 3. Força o navegador a renderizar fundos coloridos, selos e gradientes */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+  }
+
+  body, html {
+    background: #ffffff !important;
+    color: #1a1a1a !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    height: auto !important;
+  }
+
+  .page-break-after {
+    page-break-after: always !important;
+    break-after: page !important;
+  }
+
+  .avoid-break {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  @page {
+    margin: 0.6cm;
+    size: A4 portrait;
+  }
+}
