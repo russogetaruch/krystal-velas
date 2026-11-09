@@ -20,6 +20,7 @@ import {
   Phone,
   ShieldCheck,
   Sun,
+  Moon,
   Star,
   Plus,
   Minus,
@@ -37,7 +38,13 @@ import {
   Award,
   Zap,
   Share2,
-  Copy
+  Copy,
+  ShoppingBag,
+  Navigation,
+  FileCheck,
+  ClipboardList,
+  Scale,
+  Trash
 } from 'lucide-react';
 
 // Critérios Técnicos de Qualidade da Fábrica
@@ -117,6 +124,131 @@ function PortfolioSite({ onOpenAdmin }) {
   const [selectedProject, setSelectedProject] = useState(null);
   const [selectedColor, setSelectedColor] = useState('Branca (Padrão)');
   const [openFaq, setOpenFaq] = useState(0);
+
+  // ── Modo Noturno / À Luz de Velas ─────────────────────────────────────────
+  const [isCandlelightMode, setIsCandlelightMode] = useState(() => {
+    try {
+      return localStorage.getItem('krystal_candlelight') === 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('krystal_candlelight', String(isCandlelightMode));
+    } catch {}
+  }, [isCandlelightMode]);
+
+  // ── Lista de Cotação Múltipla ("Carrinho de Cotação") ────────────────────
+  const [quoteCart, setQuoteCart] = useState(() => {
+    try {
+      const saved = localStorage.getItem('krystal_quote_cart');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+  const [isCartDrawerOpen, setIsCartDrawerOpen] = useState(false);
+  const [clientCity, setClientCity] = useState('');
+  const [clientNote, setClientNote] = useState('');
+  const [showFispqModal, setShowFispqModal] = useState(false);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('krystal_quote_cart', JSON.stringify(quoteCart));
+    } catch {}
+  }, [quoteCart]);
+
+  const addToQuoteCart = (project, color = 'Branca (Padrão)', qty = 1) => {
+    setQuoteCart(prev => {
+      const cartId = `${project.id}-${color}`;
+      const existingIndex = prev.findIndex(item => item.id === cartId);
+      if (existingIndex > -1) {
+        const next = [...prev];
+        next[existingIndex] = {
+          ...next[existingIndex],
+          quantity: next[existingIndex].quantity + qty
+        };
+        return next;
+      }
+      return [...prev, {
+        id: cartId,
+        project,
+        color,
+        quantity: qty,
+        addedAt: Date.now()
+      }];
+    });
+    showToast(`"${project.title}" (${color.split(' ')[0]}) adicionada à cotação!`);
+  };
+
+  const removeFromQuoteCart = (cartId) => {
+    setQuoteCart(prev => prev.filter(i => i.id !== cartId));
+  };
+
+  const updateQuoteCartQty = (cartId, delta) => {
+    setQuoteCart(prev => prev.map(item => {
+      if (item.id === cartId) {
+        const newQ = Math.max(1, item.quantity + delta);
+        return { ...item, quantity: newQ };
+      }
+      return item;
+    }));
+  };
+
+  const clearQuoteCart = () => {
+    setQuoteCart([]);
+    showToast('Lista de cotação limpa.');
+  };
+
+  const totalCartItems = useMemo(() => {
+    return quoteCart.reduce((sum, item) => sum + item.quantity, 0);
+  }, [quoteCart]);
+
+  const totalCartWeightKg = useMemo(() => {
+    return quoteCart.reduce((sum, item) => {
+      const match = (item.project?.dimensions || '').match(/([\d,\.]+)\s*kg/i);
+      const unitWeight = match ? parseFloat(match[1].replace(',', '.')) : 0.8;
+      return sum + (item.quantity * unitWeight);
+    }, 0);
+  }, [quoteCart]);
+
+  const generateCartWhatsAppUrl = () => {
+    if (quoteCart.length === 0) return getWhatsAppContact();
+    let msg = `Olá! Montei minha Lista de Cotação no Portfólio da Krystal Velas:\n\n`;
+    if (clientCity.trim()) {
+      msg += `📍 *Destino / Cidade*: ${clientCity.trim()}\n\n`;
+    }
+    msg += `📋 *Itens para Fornecimento*:\n`;
+    quoteCart.forEach((item, idx) => {
+      msg += `${idx + 1}. *${item.project.title}* (${item.project.ref})\n`;
+      msg += `   • Cor: ${item.color}\n`;
+      msg += `   • Quantidade: ${item.quantity} ${item.project.packaging ? `(${item.project.packaging})` : 'volumes'}\n`;
+      if (item.project.duration) msg += `   • Duração: ${item.project.duration}\n`;
+    });
+    msg += `\n📦 *Resumo da Carga Estimada*:\n`;
+    msg += `• Total de volumes: ${totalCartItems} itens\n`;
+    msg += `• Peso aproximado total: ~${totalCartWeightKg.toFixed(1)} kg\n`;
+    if (clientNote.trim()) {
+      msg += `\n💬 *Observações*: ${clientNote.trim()}\n`;
+    }
+    msg += `\nPoderiam me enviar os valores atualizados de fábrica e a estimativa de frete?`;
+    return `https://wa.me/${brand.phone}?text=${encodeURIComponent(msg)}`;
+  };
+
+  const handleCopyAddress = () => {
+    const addr = "Krystal Velas - Polo Industrial de Ibiporã, PR - CEP 86200-000";
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(addr).then(() => {
+        showToast("Endereço da fábrica em Ibiporã copiado!");
+      }).catch(() => {
+        showToast(`Endereço: ${addr}`);
+      });
+    } else {
+      showToast(`Endereço: ${addr}`);
+    }
+  };
 
   // Estado das quantidades do Simulador de Atacado
   const [quoteItems, setQuoteItems] = useState({});
@@ -289,7 +421,11 @@ function PortfolioSite({ onOpenAdmin }) {
   };
 
   return (
-    <div className="min-h-screen bg-[#FFFDF7] text-[#2D1407] font-sans selection:bg-amber-400/40 selection:text-[#2D1407]">
+    <div className={`min-h-screen transition-colors duration-500 font-sans selection:bg-amber-400/40 ${
+      isCandlelightMode 
+        ? 'bg-[#0E0704] text-[#F3E9DF] selection:text-white' 
+        : 'bg-[#FFFDF7] text-[#2D1407] selection:text-[#2D1407]'
+    }`}>
       
       {/* Toast Flutuante de Compartilhamento / Confirmação */}
       {toastMessage && (
@@ -300,40 +436,89 @@ function PortfolioSite({ onOpenAdmin }) {
       )}
       
       {/* ── Topbar Luminosa & Dourada ─────────────────────────────────────── */}
-      <header className="sticky top-0 z-50 bg-[#FFFDF7]/95 backdrop-blur-md border-b border-amber-200/60 shadow-xs no-print">
+      <header className={`sticky top-0 z-50 backdrop-blur-md border-b shadow-xs transition-colors duration-500 no-print ${
+        isCandlelightMode 
+          ? 'bg-[#150B07]/95 border-amber-950/80' 
+          : 'bg-[#FFFDF7]/95 border-amber-200/60'
+      }`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
           
-          {/* Logo Brand */}
+          {/* Logo Brand com efeito de chama oscilante */}
           <div className="flex items-center gap-3 sm:gap-4">
-            <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-amber-500 via-orange-500 to-amber-400 flex items-center justify-center text-white shadow-md shadow-orange-500/20">
+            <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-amber-500 via-orange-500 to-amber-400 flex items-center justify-center text-white shadow-md shadow-orange-500/20 candle-flame-pulse">
               <Flame className="w-6 h-6 fill-white" />
             </div>
             <div>
-              <span className="font-serif font-bold text-xl sm:text-2xl tracking-wider text-[#5C1917] block leading-none">
+              <span className={`font-serif font-bold text-xl sm:text-2xl tracking-wider block leading-none ${
+                isCandlelightMode ? 'text-[#FBD58D]' : 'text-[#5C1917]'
+              }`}>
                 {brand.name}
               </span>
-              <span className="text-[10px] sm:text-[11px] uppercase tracking-[0.25em] text-amber-700 font-semibold block mt-1">
+              <span className={`text-[10px] sm:text-[11px] uppercase tracking-[0.25em] font-semibold block mt-1 ${
+                isCandlelightMode ? 'text-amber-400/80' : 'text-amber-700'
+              }`}>
                 Portfólio &bull; {brand.headquarters}
               </span>
             </div>
           </div>
 
           {/* Ações Rápidas */}
-          <div className="flex items-center gap-3 sm:gap-5">
-            <div className="hidden xl:flex items-center gap-6 text-xs font-semibold text-amber-900/80 tracking-wider">
-              <a href="#catalogo" className="hover:text-orange-600 transition-colors">Acervo</a>
-              <a href="#fabrica" className="hover:text-orange-600 transition-colors">Nossa Fábrica</a>
-              <a href="#padrao-tecnico" className="hover:text-orange-600 transition-colors">Padrão Técnico</a>
-              <a href="#logistica" className="hover:text-orange-600 transition-colors">Logística</a>
-              <a href="#simulador" className="hover:text-orange-600 transition-colors">Simulador</a>
-              <a href="#depoimentos" className="hover:text-orange-600 transition-colors">Parcerias</a>
-              <a href="#faq" className="hover:text-orange-600 transition-colors">Dúvidas</a>
+          <div className="flex items-center gap-2 sm:gap-4">
+            <div className={`hidden xl:flex items-center gap-6 text-xs font-semibold tracking-wider ${
+              isCandlelightMode ? 'text-amber-200/80' : 'text-amber-900/80'
+            }`}>
+              <a href="#catalogo" className="hover:text-orange-400 transition-colors">Acervo</a>
+              <a href="#fabrica" className="hover:text-orange-400 transition-colors">Nossa Fábrica</a>
+              <a href="#padrao-tecnico" className="hover:text-orange-400 transition-colors">Padrão Técnico</a>
+              <a href="#logistica" className="hover:text-orange-400 transition-colors">Logística</a>
+              <a href="#simulador" className="hover:text-orange-400 transition-colors">Simulador</a>
+              <a href="#depoimentos" className="hover:text-orange-400 transition-colors">Parcerias</a>
+              <a href="#faq" className="hover:text-orange-400 transition-colors">Dúvidas</a>
             </div>
+
+            {/* Alternador de Modo Luz de Velas (Atmosfera Noturna / Luxo) */}
+            <button
+              onClick={() => setIsCandlelightMode(prev => !prev)}
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-bold transition-all cursor-pointer border ${
+                isCandlelightMode
+                  ? 'bg-amber-500/20 text-amber-300 border-amber-500/40 shadow-md shadow-amber-500/20'
+                  : 'bg-[#FFF9EE] hover:bg-amber-100 text-amber-900 border-amber-300'
+              }`}
+              title={isCandlelightMode ? "Alternar para modo dia" : "Ativar modo atmosfera à luz de velas"}
+            >
+              {isCandlelightMode ? <Sun className="w-3.5 h-3.5 text-amber-400" /> : <Moon className="w-3.5 h-3.5 text-amber-700" />}
+              <span className="hidden md:inline">{isCandlelightMode ? "Luz do Dia" : "Luz de Velas"}</span>
+            </button>
+
+            {/* Botão Gaveta de Cotação Múltipla */}
+            <button
+              onClick={() => setIsCartDrawerOpen(true)}
+              className={`relative flex items-center gap-2 px-3.5 py-2 rounded-full font-bold text-xs uppercase tracking-wider border transition-all cursor-pointer ${
+                quoteCart.length > 0
+                  ? 'bg-gradient-to-r from-amber-500/25 to-orange-500/25 text-orange-400 border-amber-400/80 shadow-md'
+                  : isCandlelightMode
+                    ? 'bg-white/5 hover:bg-white/10 text-amber-200 border-amber-900/60'
+                    : 'bg-[#FFF9EE] hover:bg-amber-100/80 text-amber-950 border-amber-300'
+              }`}
+              title="Abrir lista de cotação com cálculo de carga e peso"
+            >
+              <ClipboardList className="w-4 h-4 text-orange-500" />
+              <span className="hidden sm:inline">Cotação</span>
+              {totalCartItems > 0 && (
+                <span className="w-5 h-5 rounded-full bg-gradient-to-r from-orange-600 to-amber-600 text-white text-[10px] flex items-center justify-center font-bold">
+                  {totalCartItems}
+                </span>
+              )}
+            </button>
 
             {/* Botão Baixar Catálogo PDF */}
             <button
               onClick={handlePrintCatalog}
-              className="hidden sm:inline-flex items-center gap-2 bg-[#FFF9EE] hover:bg-amber-100/80 text-amber-950 font-bold text-xs uppercase tracking-wider px-4 py-2.5 rounded-full border border-amber-300 shadow-xs transition-all cursor-pointer"
+              className={`hidden sm:inline-flex items-center gap-2 font-bold text-xs uppercase tracking-wider px-4 py-2.5 rounded-full border shadow-xs transition-all cursor-pointer ${
+                isCandlelightMode
+                  ? 'bg-white/10 hover:bg-white/20 text-amber-200 border-amber-800/80'
+                  : 'bg-[#FFF9EE] hover:bg-amber-100/80 text-amber-950 border-amber-300'
+              }`}
               title="Exportar catálogo oficial em PDF ou Imprimir"
             >
               <FileText className="w-3.5 h-3.5 text-orange-600" />
@@ -345,10 +530,11 @@ function PortfolioSite({ onOpenAdmin }) {
               onClick={() => trackEvent('whatsappClicks')}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-2 bg-gradient-to-r from-orange-600 via-amber-500 to-orange-500 hover:from-orange-500 hover:to-orange-600 text-white font-bold text-xs uppercase tracking-widest px-5 sm:px-6 py-3 rounded-full shadow-lg shadow-orange-500/25 hover:shadow-orange-500/40 hover:scale-105 transition-all duration-300"
+              className="flex items-center gap-2 bg-gradient-to-r from-orange-600 via-amber-500 to-orange-500 hover:from-orange-500 hover:to-orange-600 text-white font-bold text-xs uppercase tracking-widest px-4 sm:px-6 py-2.5 sm:py-3 rounded-full shadow-lg shadow-orange-500/25 hover:scale-105 transition-all duration-300 shrink-0"
             >
               <MessageCircle className="w-4 h-4 fill-white" />
-              <span>Pedir Orçamento</span>
+              <span className="hidden sm:inline">Pedir Orçamento</span>
+              <span className="sm:hidden">Cotar</span>
             </a>
           </div>
 
@@ -745,14 +931,37 @@ function PortfolioSite({ onOpenAdmin }) {
                   <span className="font-bold text-[#5C1917] shrink-0">{project.duration}</span>
                 </div>
 
-                <div className="flex items-center gap-2 pt-1">
+                <div className="flex items-center gap-1.5 pt-1">
                   <button
                     type="button"
                     onClick={() => openProjectDetails(project)}
-                    className="flex-1 flex items-center justify-center gap-1.5 bg-[#FFF8EB] hover:bg-amber-100/80 text-[#5C1917] font-bold text-xs uppercase tracking-wider py-2.5 px-3 rounded-xl border border-amber-300 shadow-2xs transition-all cursor-pointer"
+                    className={`flex-1 flex items-center justify-center gap-1 text-xs uppercase tracking-wider font-bold py-2.5 px-2 rounded-xl border shadow-2xs transition-all cursor-pointer ${
+                      isCandlelightMode
+                        ? 'bg-white/10 hover:bg-white/20 text-amber-200 border-amber-800'
+                        : 'bg-[#FFF8EB] hover:bg-amber-100/80 text-[#5C1917] border-amber-300'
+                    }`}
                   >
-                    <Eye className="w-3.5 h-3.5 text-orange-600" />
+                    <Eye className="w-3.5 h-3.5 text-orange-500" />
                     <span>Detalhes</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      addToQuoteCart(project, 'Branca (Padrão)', 1);
+                    }}
+                    className={`flex items-center justify-center gap-1 text-xs uppercase tracking-wider font-bold py-2.5 px-2.5 rounded-xl border transition-all cursor-pointer shrink-0 ${
+                      quoteCart.some(i => i.project?.id === project.id)
+                        ? 'bg-amber-500/25 text-orange-400 border-amber-400/80 shadow-xs'
+                        : isCandlelightMode
+                          ? 'bg-amber-950/40 hover:bg-amber-900/60 text-amber-300 border-amber-800'
+                          : 'bg-amber-50 hover:bg-amber-100 text-amber-900 border-amber-200'
+                    }`}
+                    title="Adicionar à lista de cotação"
+                  >
+                    <Plus className="w-3.5 h-3.5 text-orange-500" />
+                    <span className="text-[11px]">{quoteCart.some(i => i.project?.id === project.id) ? 'Na Lista' : '+ Lista'}</span>
                   </button>
 
                   <a
@@ -763,7 +972,7 @@ function PortfolioSite({ onOpenAdmin }) {
                     }}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center justify-center gap-1.5 bg-gradient-to-r from-emerald-600 to-green-500 hover:from-emerald-500 hover:to-green-600 text-white font-bold text-xs uppercase tracking-wider py-2.5 px-3.5 rounded-xl shadow-xs transition-all cursor-pointer shrink-0"
+                    className="flex items-center justify-center gap-1 bg-gradient-to-r from-emerald-600 to-green-500 hover:from-emerald-500 hover:to-green-600 text-white font-bold text-xs uppercase tracking-wider py-2.5 px-3 rounded-xl shadow-xs transition-all cursor-pointer shrink-0"
                     title="Cotar no WhatsApp da fábrica"
                   >
                     <MessageCircle className="w-3.5 h-3.5 fill-white" />
@@ -776,7 +985,11 @@ function PortfolioSite({ onOpenAdmin }) {
                       e.stopPropagation();
                       handleShareCandle(project);
                     }}
-                    className="p-2.5 text-gray-500 hover:text-orange-600 hover:bg-amber-50 rounded-xl border border-amber-200 transition-colors cursor-pointer shrink-0"
+                    className={`p-2.5 rounded-xl border transition-colors cursor-pointer shrink-0 ${
+                      isCandlelightMode 
+                        ? 'text-gray-400 hover:text-amber-300 hover:bg-white/5 border-amber-900/40' 
+                        : 'text-gray-500 hover:text-orange-600 hover:bg-amber-50 border-amber-200'
+                    }`}
                     title="Copiar link desta vela para envio"
                   >
                     <Share2 className="w-3.5 h-3.5" />
@@ -829,6 +1042,26 @@ function PortfolioSite({ onOpenAdmin }) {
                 </div>
               ))}
             </div>
+          </div>
+
+          {/* Banner de Laudo de Pureza & FISPQ */}
+          <div className="mt-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 sm:p-6 rounded-3xl bg-amber-50/80 border border-amber-200/90 shadow-xs">
+            <div className="flex items-center gap-3.5">
+              <div className="w-11 h-11 rounded-2xl bg-orange-100 text-orange-700 flex items-center justify-center font-bold shrink-0">
+                <FileCheck className="w-6 h-6" />
+              </div>
+              <div>
+                <h4 className="font-serif font-bold text-base text-[#5C1917]">Laudo de Pureza & Ficha Técnica Laboratorial (FISPQ)</h4>
+                <p className="text-xs text-amber-900/80">Certificação de 100% Parafina Pura sem chumbo, fuligem ou compostos tóxicos.</p>
+              </div>
+            </div>
+            <button
+              onClick={() => setShowFispqModal(true)}
+              className="flex items-center justify-center gap-2 bg-[#5C1917] hover:bg-[#431210] text-white font-bold text-xs uppercase tracking-wider py-3 px-5 rounded-xl shadow-xs transition-all cursor-pointer shrink-0"
+            >
+              <FileText className="w-4 h-4 text-amber-300" />
+              <span>Ver Ficha Técnica Completa</span>
+            </button>
           </div>
 
         </div>
@@ -1107,6 +1340,80 @@ function PortfolioSite({ onOpenAdmin }) {
         </div>
       </section>
 
+      {/* ── Polo Fabril & Localização Estratégica em Ibiporã / PR ────────────── */}
+      <section id="localizacao" className="py-16 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 no-print">
+        <div className={`p-8 sm:p-12 rounded-3xl border shadow-xl relative overflow-hidden ${
+          isCandlelightMode 
+            ? 'bg-[#180E09] border-amber-900/60 text-[#F3E9DF]' 
+            : 'bg-white border-amber-300 text-[#2D1407]'
+        }`}>
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+            
+            <div className="lg:col-span-7 space-y-4">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-100 text-amber-900 text-xs uppercase font-bold tracking-widest">
+                <MapPin className="w-4 h-4 text-orange-600" />
+                <span>Polo Industrial &bull; Norte do Paraná</span>
+              </div>
+
+              <h3 className={`font-serif text-3xl sm:text-4xl font-bold leading-tight ${
+                isCandlelightMode ? 'text-[#FBD58D]' : 'text-[#5C1917]'
+              }`}>
+                Fábrica Própria em Ibiporã — PR
+              </h3>
+
+              <p className="text-xs sm:text-sm text-[#2D1407]/80 leading-relaxed font-normal">
+                Localizada no polo logístico de Ibiporã (Região Metropolitana de Londrina), nossa unidade fabril conta com infraestrutura para carregamento de lotes industriais para atacado e expedição rápida para todo o Brasil.
+              </p>
+
+              <div className="p-4 rounded-2xl bg-[#FFF9EE] border border-amber-200/80 text-xs text-amber-950 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                  <strong className="block text-sm text-[#5C1917]">Endereço Fabril Oficial:</strong>
+                  <span>Parque Industrial de Ibiporã &bull; Ibiporã / Paraná &bull; CEP 86200-000</span>
+                </div>
+                <button
+                  onClick={handleCopyAddress}
+                  className="inline-flex items-center gap-1.5 bg-white hover:bg-amber-100 text-[#5C1917] border border-amber-300 text-xs font-bold px-3.5 py-2 rounded-xl transition-all cursor-pointer shrink-0"
+                >
+                  <Copy className="w-3.5 h-3.5 text-orange-600" />
+                  <span>Copiar Endereço</span>
+                </button>
+              </div>
+            </div>
+
+            <div className="lg:col-span-5 flex flex-col gap-3">
+              <a
+                href="https://www.google.com/maps/search/?api=1&query=Ibipora+Parana+Brasil"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center gap-2.5 bg-gradient-to-r from-orange-600 to-amber-500 hover:from-orange-500 hover:to-orange-600 text-white font-bold text-xs uppercase tracking-wider py-4 px-6 rounded-2xl shadow-md transition-all hover:scale-[1.02]"
+              >
+                <Navigation className="w-4 h-4 fill-white" />
+                <span>Abrir no Google Maps</span>
+              </a>
+
+              <a
+                href="https://waze.com/ul?q=Ibipora+PR"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center gap-2.5 bg-[#FFF8EB] hover:bg-amber-100/90 text-[#5C1917] border border-amber-300 font-bold text-xs uppercase tracking-wider py-4 px-6 rounded-2xl shadow-2xs transition-all hover:scale-[1.02]"
+              >
+                <MapPin className="w-4 h-4 text-orange-600" />
+                <span>Traçar Rota no Waze</span>
+              </a>
+
+              <button
+                onClick={() => setShowFispqModal(true)}
+                className="flex items-center justify-center gap-2.5 bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 font-bold text-xs uppercase tracking-wider py-3.5 px-6 rounded-2xl transition-all cursor-pointer"
+              >
+                <FileCheck className="w-4 h-4 text-emerald-600" />
+                <span>Certificado & Laudo de Pureza</span>
+              </button>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
       {/* ── Modal da Obra com Variações de Cores & Embalagem ──────────────── */}
       {selectedProject && (
         <div
@@ -1236,6 +1543,18 @@ function PortfolioSite({ onOpenAdmin }) {
 
               {/* Botões de Cotação & Compartilhamento */}
               <div className="pt-4 border-t border-amber-200 flex flex-col sm:flex-row gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => {
+                    addToQuoteCart(selectedProject, selectedColor, 1);
+                  }}
+                  className="flex items-center justify-center gap-2 bg-[#5C1917] hover:bg-[#431210] text-white font-bold text-xs uppercase tracking-wider py-4 px-5 rounded-xl shadow-md transition-all cursor-pointer"
+                  title="Adicionar esta vela na lista de cotação"
+                >
+                  <Plus className="w-4 h-4 text-amber-300" />
+                  <span>+ Cotação</span>
+                </button>
+
                 <a
                   href={getWhatsAppContact(`Olá! Gostaria de cotar a obra *${selectedProject.title}* (${selectedProject.ref}) na cor *${selectedColor}* da Krystal Velas.`)}
                   onClick={() => trackEvent('whatsappClicks')}
@@ -1244,7 +1563,7 @@ function PortfolioSite({ onOpenAdmin }) {
                   className="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-orange-600 to-amber-500 hover:from-orange-500 hover:to-orange-600 text-white font-bold text-xs uppercase tracking-[0.2em] py-4 rounded-xl shadow-lg transition-transform hover:scale-[1.02]"
                 >
                   <MessageCircle className="w-4 h-4 fill-white" />
-                  <span>Cotar {selectedProject.title.split(' ')[0]} ({selectedColor.split(' ')[0]})</span>
+                  <span>Cotar {selectedProject.title.split(' ')[0]}</span>
                 </a>
 
                 <button
@@ -1258,6 +1577,283 @@ function PortfolioSite({ onOpenAdmin }) {
                 </button>
               </div>
 
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Botão Flutuante de Cotação Múltipla ──────────────────────────── */}
+      {totalCartItems > 0 && (
+        <button
+          onClick={() => setIsCartDrawerOpen(true)}
+          className="fixed bottom-6 left-6 z-40 flex items-center gap-2.5 bg-gradient-to-r from-[#5C1917] to-[#802220] text-white font-bold text-xs uppercase tracking-wider px-5 py-3.5 rounded-full shadow-2xl hover:scale-105 active:scale-95 transition-all duration-300 border-2 border-amber-400 no-print cursor-pointer animate-pulse"
+          title="Abrir minha lista de cotação"
+        >
+          <ClipboardList className="w-4 h-4 text-amber-400" />
+          <span>Ver Cotação ({totalCartItems})</span>
+        </button>
+      )}
+
+      {/* ── Gaveta Lateral de Cotação Múltipla ("Carrinho de Cotação") ── */}
+      {isCartDrawerOpen && (
+        <div
+          onClick={() => setIsCartDrawerOpen(false)}
+          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex justify-end no-print animate-fadeIn"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className={`w-full max-w-md h-full flex flex-col justify-between shadow-2xl border-l transition-colors duration-300 ${
+              isCandlelightMode 
+                ? 'bg-[#150D09] border-amber-900/60 text-[#FAF5EE]' 
+                : 'bg-white border-amber-200 text-[#2D1407]'
+            }`}
+          >
+            {/* Cabeçalho da Gaveta */}
+            <div className={`p-5 sm:p-6 border-b flex items-center justify-between ${
+              isCandlelightMode ? 'border-amber-900/40 bg-[#1A100B]' : 'border-amber-100 bg-[#FFFDF7]'
+            }`}>
+              <div>
+                <div className="flex items-center gap-2">
+                  <ClipboardList className="w-5 h-5 text-orange-600" />
+                  <h3 className={`font-serif text-xl font-bold ${
+                    isCandlelightMode ? 'text-[#FBD58D]' : 'text-[#5C1917]'
+                  }`}>
+                    Minha Lista de Cotação
+                  </h3>
+                </div>
+                <p className="text-xs text-amber-700/80 mt-0.5">
+                  {totalCartItems} volumes &bull; Carga estimada: ~{totalCartWeightKg.toFixed(1)} kg
+                </p>
+              </div>
+
+              <button
+                onClick={() => setIsCartDrawerOpen(false)}
+                className="p-2 rounded-full hover:bg-gray-100/10 text-gray-400 hover:text-black dark:hover:text-white cursor-pointer transition-colors"
+                title="Fechar"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Corpo / Lista de Itens */}
+            <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-3.5">
+              {quoteCart.length === 0 ? (
+                <div className="text-center py-16 space-y-3">
+                  <ShoppingBag className="w-12 h-12 text-amber-600/40 mx-auto" />
+                  <h4 className="font-serif font-bold text-lg text-[#5C1917]">Sua lista de cotação está vazia</h4>
+                  <p className="text-xs text-gray-500 max-w-xs mx-auto">
+                    Navegue pelas velas no catálogo e clique em "+ Lista" para montar um pedido completo com cálculo de peso e frete.
+                  </p>
+                </div>
+              ) : (
+                quoteCart.map((item) => (
+                  <div
+                    key={item.id}
+                    className={`p-3.5 rounded-2xl border flex items-center justify-between gap-3 shadow-2xs ${
+                      isCandlelightMode ? 'bg-[#1C120D] border-amber-900/40' : 'bg-[#FFFDF7] border-amber-200/70'
+                    }`}
+                  >
+                    <img
+                      src={item.project?.image}
+                      alt={item.project?.title}
+                      className="w-14 h-14 object-contain rounded-xl bg-white p-1 border border-amber-100 shrink-0"
+                      onError={(e) => { e.currentTarget.src = '/produtos/vela1.png'; }}
+                    />
+
+                    <div className="flex-1 min-w-0">
+                      <h5 className={`font-bold text-xs truncate ${
+                        isCandlelightMode ? 'text-[#FAF5EE]' : 'text-[#5C1917]'
+                      }`}>
+                        {item.project?.title}
+                      </h5>
+                      <span className="text-[10px] text-orange-600 font-semibold block">
+                        Cor: {item.color.split(' ')[0]} &bull; {item.project?.ref}
+                      </span>
+                      {item.project?.packaging && (
+                        <span className="text-[10px] text-gray-500 block truncate">
+                          {item.project.packaging}
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <button
+                        onClick={() => updateQuoteCartQty(item.id, -1)}
+                        className="w-7 h-7 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 flex items-center justify-center text-xs font-bold cursor-pointer"
+                        title="Diminuir"
+                      >
+                        <Minus className="w-3 h-3" />
+                      </button>
+                      <span className="w-6 text-center text-xs font-bold">
+                        {item.quantity}
+                      </span>
+                      <button
+                        onClick={() => updateQuoteCartQty(item.id, 1)}
+                        className="w-7 h-7 rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-900 flex items-center justify-center text-xs font-bold cursor-pointer"
+                        title="Aumentar"
+                      >
+                        <Plus className="w-3 h-3" />
+                      </button>
+                      <button
+                        onClick={() => removeFromQuoteCart(item.id)}
+                        className="p-1.5 text-red-500/70 hover:text-red-600 hover:bg-red-50 rounded-lg ml-1 cursor-pointer transition-colors"
+                        title="Remover item"
+                      >
+                        <Trash className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            {/* Rodapé da Gaveta: Resumo, Cidade e CTA WhatsApp */}
+            {quoteCart.length > 0 && (
+              <div className={`p-5 sm:p-6 border-t space-y-4 ${
+                isCandlelightMode ? 'border-amber-900/40 bg-[#1A100B]' : 'border-amber-100 bg-[#FFFDF7]'
+              }`}>
+                {/* Resumo de Carga */}
+                <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs space-y-1">
+                  <div className="flex justify-between font-bold text-amber-950 dark:text-amber-200">
+                    <span>Total de Volumes:</span>
+                    <span>{totalCartItems} un/caixas</span>
+                  </div>
+                  <div className="flex justify-between text-orange-700 dark:text-orange-400 font-bold">
+                    <span>Peso Total Estimado:</span>
+                    <span>~{totalCartWeightKg.toFixed(1)} kg</span>
+                  </div>
+                  <span className="text-[10px] text-gray-500 block pt-0.5">
+                    * Carga elegível para cotação com transportadora parceira saindo de Ibiporã/PR.
+                  </span>
+                </div>
+
+                {/* Campos opcionais para refinar a cotação */}
+                <div className="space-y-2">
+                  <input
+                    type="text"
+                    value={clientCity}
+                    onChange={(e) => setClientCity(e.target.value)}
+                    placeholder="Sua Cidade / Estado (para cálculo do frete)"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-amber-200 bg-white dark:bg-black/20 text-xs focus:outline-none focus:border-orange-500"
+                  />
+                  <input
+                    type="text"
+                    value={clientNote}
+                    onChange={(e) => setClientNote(e.target.value)}
+                    placeholder="Observação (ex: Prazo desejado, CNPJ, etc.)"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-amber-200 bg-white dark:bg-black/20 text-xs focus:outline-none focus:border-orange-500"
+                  />
+                </div>
+
+                {/* Ações */}
+                <div className="space-y-2">
+                  <a
+                    href={generateCartWhatsAppUrl()}
+                    onClick={() => {
+                      trackEvent('whatsappClicks');
+                      setIsCartDrawerOpen(false);
+                    }}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full flex items-center justify-center gap-2.5 bg-gradient-to-r from-emerald-600 via-green-600 to-emerald-500 hover:from-emerald-500 hover:to-green-500 text-white font-bold text-xs uppercase tracking-widest py-4 rounded-xl shadow-lg shadow-green-600/20 hover:scale-[1.01] transition-all"
+                  >
+                    <MessageCircle className="w-4 h-4 fill-white" />
+                    <span>Enviar Cotação no WhatsApp ({totalCartItems})</span>
+                  </a>
+
+                  <button
+                    onClick={clearQuoteCart}
+                    className="w-full text-center text-[11px] text-gray-500 hover:text-red-600 py-1 cursor-pointer transition-colors"
+                  >
+                    Limpar toda a lista
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ── Modal Oficial de Ficha Técnica & Pureza (FISPQ) ──────────────── */}
+      {showFispqModal && (
+        <div
+          onClick={() => setShowFispqModal(false)}
+          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 sm:p-6 no-print animate-fadeIn"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="bg-white text-[#2D1407] rounded-3xl max-w-2xl w-full border border-amber-300 shadow-2xl p-6 sm:p-8 space-y-6 max-h-[90vh] overflow-y-auto"
+          >
+            <div className="flex items-center justify-between pb-4 border-b border-amber-200">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-orange-100 text-orange-700 flex items-center justify-center font-bold">
+                  <FileCheck className="w-6 h-6" />
+                </div>
+                <div>
+                  <h3 className="font-serif text-xl sm:text-2xl font-bold text-[#5C1917]">
+                    Ficha Técnica & Certificado de Pureza
+                  </h3>
+                  <span className="text-[11px] uppercase tracking-wider text-amber-800 font-semibold">
+                    Krystal Velas &bull; Polo Fabril Ibiporã / PR
+                  </span>
+                </div>
+              </div>
+
+              <button
+                onClick={() => setShowFispqModal(false)}
+                className="p-1.5 rounded-full hover:bg-gray-100 text-gray-500 hover:text-black cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-4 text-xs sm:text-sm text-[#2D1407]/85 leading-relaxed">
+              <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 space-y-1">
+                <strong className="text-[#5C1917] block">Laudo de Composição da Matéria-Prima:</strong>
+                <p>Nossas velas utilizam exclusivamente <strong>100% Parafina Microcristalina Pura</strong> de primeiro refino, livre de sebo animal, resíduos asfálticos ou misturas gordurosas.</p>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="p-3.5 rounded-xl bg-[#FFFDF7] border border-amber-100 space-y-1">
+                  <span className="text-[10px] uppercase font-bold text-orange-600 block">Ponto de Fusão</span>
+                  <strong className="text-[#5C1917]">58°C a 60°C</strong>
+                  <p className="text-[11px] text-gray-600">Garante estabilidade térmica no transporte sem deformação.</p>
+                </div>
+
+                <div className="p-3.5 rounded-xl bg-[#FFFDF7] border border-amber-100 space-y-1">
+                  <span className="text-[10px] uppercase font-bold text-orange-600 block">Pavio</span>
+                  <strong className="text-[#5C1917]">100% Algodão sem Chumbo</strong>
+                  <p className="text-[11px] text-gray-600">Alma de algodão/papel atóxica que não emite fuligem preta.</p>
+                </div>
+
+                <div className="p-3.5 rounded-xl bg-[#FFFDF7] border border-amber-100 space-y-1">
+                  <span className="text-[10px] uppercase font-bold text-orange-600 block">Emissão e Fumaça</span>
+                  <strong className="text-[#5C1917]">Zero Fumaça Tóxica</strong>
+                  <p className="text-[11px] text-gray-600">Seguro para templos, paróquias, residências e ambientes fechados.</p>
+                </div>
+
+                <div className="p-3.5 rounded-xl bg-[#FFFDF7] border border-amber-100 space-y-1">
+                  <span className="text-[10px] uppercase font-bold text-orange-600 block">Registro e Origem</span>
+                  <strong className="text-[#5C1917]">Ibiporã — Paraná</strong>
+                  <p className="text-[11px] text-gray-600">Fabricação industrial padronizada com controle de lote.</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="pt-4 border-t border-amber-200 flex flex-col sm:flex-row items-center justify-between gap-3">
+              <span className="text-xs text-gray-500">
+                Documento de referência para distribuidores e atacado.
+              </span>
+              <button
+                onClick={() => {
+                  setShowFispqModal(false);
+                  handlePrintCatalog();
+                }}
+                className="w-full sm:w-auto flex items-center justify-center gap-2 bg-[#5C1917] hover:bg-[#431210] text-white font-bold text-xs uppercase tracking-wider py-3 px-6 rounded-xl shadow-xs transition-all cursor-pointer"
+              >
+                <Printer className="w-4 h-4 text-amber-300" />
+                <span>Imprimir Ficha Técnica / Catálogo</span>
+              </button>
             </div>
           </div>
         </div>
@@ -1277,9 +1873,15 @@ function PortfolioSite({ onOpenAdmin }) {
       </a>
 
       {/* ── Rodapé Luminoso com Acesso Administrativo Discreto ────────────── */}
-      <footer className="py-12 bg-white border-t border-amber-200/80 text-center text-xs text-[#2D1407]/70 space-y-3 no-print">
+      <footer className={`py-12 border-t text-center text-xs space-y-3 no-print transition-colors duration-500 ${
+        isCandlelightMode
+          ? 'bg-[#0E0704] border-amber-950/80 text-amber-200/60'
+          : 'bg-white border-amber-200/80 text-[#2D1407]/70'
+      }`}>
         <div className="flex items-center justify-center gap-2 sm:gap-3">
-          <span className="font-serif font-bold text-sm tracking-wider text-[#5C1917] uppercase">
+          <span className={`font-serif font-bold text-sm tracking-wider uppercase ${
+            isCandlelightMode ? 'text-[#FBD58D]' : 'text-[#5C1917]'
+          }`}>
             {brand.name}
           </span>
           <span>&bull;</span>
@@ -1292,7 +1894,9 @@ function PortfolioSite({ onOpenAdmin }) {
         {/* Créditos NexusThink */}
         <p className="text-[11px] text-amber-900/70 flex items-center justify-center gap-1.5 pt-1">
           <span>Desenvolvido por</span>
-          <span className="font-bold text-[#5C1917] tracking-wider hover:text-orange-600 transition-colors">
+          <span className={`font-bold tracking-wider hover:text-orange-600 transition-colors ${
+            isCandlelightMode ? 'text-amber-400' : 'text-[#5C1917]'
+          }`}>
             NexusThink
           </span>
         </p>

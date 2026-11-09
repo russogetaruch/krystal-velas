@@ -46,3 +46,4 @@ npm run build
 ---
 
 © 2026 Krystal Velas. Todos os direitos reservados.
+

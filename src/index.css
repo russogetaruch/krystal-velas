@@ -23,6 +23,41 @@
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
+   ANIMAÇÕES VIVAS & PULSAÇÃO DA CHAMA (LUZ DE VELAS)
+   ══════════════════════════════════════════════════════════════════════════ */
+@keyframes candleFlicker {
+  0%, 100% {
+    filter: drop-shadow(0 0 10px rgba(245, 158, 11, 0.75)) drop-shadow(0 0 20px rgba(234, 88, 12, 0.4));
+    transform: scale(1);
+  }
+  30% {
+    filter: drop-shadow(0 0 7px rgba(245, 158, 11, 0.5)) drop-shadow(0 0 14px rgba(234, 88, 12, 0.3));
+    transform: scale(0.985);
+  }
+  60% {
+    filter: drop-shadow(0 0 14px rgba(245, 158, 11, 0.85)) drop-shadow(0 0 28px rgba(234, 88, 12, 0.5));
+    transform: scale(1.02);
+  }
+  85% {
+    filter: drop-shadow(0 0 9px rgba(245, 158, 11, 0.6)) drop-shadow(0 0 18px rgba(234, 88, 12, 0.35));
+    transform: scale(0.995);
+  }
+}
+
+.candle-flame-pulse {
+  animation: candleFlicker 3s ease-in-out infinite;
+}
+
+@keyframes warmAura {
+  0%, 100% { transform: scale(1); opacity: 0.2; }
+  50% { transform: scale(1.1); opacity: 0.35; }
+}
+
+.glow-ambient {
+  animation: warmAura 6s ease-in-out infinite;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
    VISIBILIDADE EM TELA NORMAL
    ══════════════════════════════════════════════════════════════════════════ */
 @media screen {
