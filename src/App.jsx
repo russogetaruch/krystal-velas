@@ -1356,11 +1356,15 @@ export default function App() {
   });
 
   useEffect(() => {
-    const handleHash = () => {
+    const handleRoute = () => {
       setIsAdminView(window.location.hash === '#/admin' || window.location.pathname === '/admin');
     };
-    window.addEventListener('hashchange', handleHash);
-    return () => window.removeEventListener('hashchange', handleHash);
+    window.addEventListener('hashchange', handleRoute);
+    window.addEventListener('popstate', handleRoute);
+    return () => {
+      window.removeEventListener('hashchange', handleRoute);
+      window.removeEventListener('popstate', handleRoute);
+    };
   }, []);
 
   const openAdmin = () => {
@@ -1369,6 +1373,9 @@ export default function App() {
   };
 
   const closeAdmin = () => {
+    if (window.location.pathname === '/admin') {
+      window.history.pushState(null, '', '/');
+    }
     window.location.hash = '';
     setIsAdminView(false);
   };

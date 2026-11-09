@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { usePortfolio } from '../context/PortfolioContext';
 import { AVAILABLE_PRODUCT_IMAGES } from '../data/initialData';
 import PrintableCatalog from '../components/PrintableCatalog';
